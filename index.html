@@ -171,6 +171,20 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .vsub { color: var(--muted); font-size: .82rem; }
 .vrow.used .badge { filter: grayscale(.9); opacity: .6; }
 .vrow.used .vbal { color: var(--muted); }
+.brand-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -2px; }
+.pick { display: inline-flex; align-items: center; gap: 7px; border: 0; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); border-radius: 999px; padding: 6px 12px 6px 8px; font-size: .88rem; font-weight: 500; color: var(--ink); }
+.pick[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); font-weight: 600; }
+.pick-dot { width: 14px; height: 14px; border-radius: 5px; flex: none; }
+.settings { display: flex; flex-direction: column; gap: 16px; }
+.brand-list { display: flex; flex-direction: column; gap: 8px; }
+.brand-list:empty::before { content: "No brands yet."; color: var(--muted); font-size: .9rem; }
+.brand-row { display: flex; align-items: center; gap: 10px; }
+.brand-row .b-name { flex: 1 1 auto; }
+.b-colwrap { position: relative; flex: none; cursor: pointer; }
+.b-colwrap .b-prev { width: 44px; height: 44px; border-radius: 11px; font-size: .9rem; }
+.b-colwrap .b-color { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer; }
+.b-colwrap:focus-within .b-prev { outline: 2px solid var(--accent); outline-offset: 2px; }
+.b-del { flex: none; }
 .empty { background: var(--surface); border-radius: 20px; padding: 32px 22px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; box-shadow: var(--shadow); }
 .empty h2 { color: var(--ink); }
 .empty p { margin: 0; max-width: 40ch; }
@@ -241,7 +255,7 @@ textarea { resize: vertical; min-height: 64px; }
   <header class="top">
     <h1>Gift Card Wallet</h1>
     <div class="top-actions">
-      <button class="btn icon-btn" id="settingsBtn" aria-label="Names and currency" title="Names and currency">
+      <button class="btn icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
     </div>
@@ -319,7 +333,7 @@ textarea { resize: vertical; min-height: 64px; }
   "use strict";
   var db = null;
   var cards = [];
-  var settings = { people: ["Rex", "Wife"], currency: "GBP" };
+  var settings = { people: ["Rex", "Emily"], currency: "GBP", brands: [] };
   var loaded = false;
   var filter = "all";
   var query = "";
@@ -375,7 +389,34 @@ textarea { resize: vertical; min-height: 64px; }
     for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 997;
     var hues = [342, 2, 14, 152, 168, 192, 212, 228, 250, 268, 288, 318];
     return hues[h % hues.length];
+  }  function hslToHex(h, sat, l) {
+    sat /= 100; l /= 100;
+    var k = function (n) { return (n + h / 30) % 12; }, a = sat * Math.min(l, 1 - l);
+    var f = function (n) { var v = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return Math.round(v * 255).toString(16).padStart(2, "0"); };
+    return "#" + f(0) + f(8) + f(4);
   }
+  function brandOf(store) {
+    var key = String(store || "").trim().toLowerCase();
+    if (!key) return null;
+    for (var i = 0; i < (settings.brands || []).length; i++) if (String(settings.brands[i].name).trim().toLowerCase() === key) return settings.brands[i];
+    return null;
+  }
+  function defaultColor(store) { return hslToHex(hueFor(store), 58, 42); }
+  function colorFor(store) { var b = brandOf(store); return b && /^#[0-9a-f]{6}$/i.test(b.color || "") ? b.color : defaultColor(store); }
+  function isLight(hex) {
+    var r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    var lin = function (c) { return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+    return .2126 * lin(r) + .7152 * lin(g) + .0722 * lin(b) > .42;
+  }
+  // Paints a badge or card in the brand's colour (or an automatic one), with dark text on light colours.
+  function paint(node, store, sheen) {
+    var c = colorFor(store);
+    node.style.background = c; // fallback where color-mix isn't supported
+    node.style.background = (sheen ? "radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%), " : "") +
+      "linear-gradient(140deg, " + c + ", color-mix(in srgb, " + c + " 70%, #000))";
+    node.style.color = isLight(c) ? "#15161d" : "#ffffff";
+  }
+
   function expiryInfo(c) {
     var d = daysUntil(c.expiry);
     if (d === null) return null;
@@ -443,7 +484,7 @@ textarea { resize: vertical; min-height: 64px; }
     var whenCls = ex && ex.kind ? "when " + ex.kind : "when";
     var sub = c.status === "used" ? "Used up" : (c.initialP && c.initialP !== c.balanceP ? "of " + money(c.initialP) : (c.hasImage ? "Barcode saved" : ""));
     var badge = el("span", { class: "badge", "aria-hidden": "true", text: initials(c.store) });
-    badge.style.setProperty("--h", hueFor(c.store));
+    paint(badge, c.store, false);
     return el("button", { class: "vrow" + (c.status === "used" ? " used" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + when + ", " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } }, [
       badge,
       el("span", { class: "vmain" }, [
@@ -478,7 +519,7 @@ textarea { resize: vertical; min-height: 64px; }
         ])
       ])
     ]);
-    b.style.setProperty("--h", hueFor(c.store));
+    paint(b, c.store, true);
     return b;
   }
 
@@ -647,6 +688,23 @@ textarea { resize: vertical; min-height: 64px; }
     }
   }
 
+  function brandPicker() {
+    var brands = settings.brands || [];
+    var dl = el("datalist", { id: "fBrandList" });
+    brands.forEach(function (b) { dl.appendChild(el("option", { value: b.name })); });
+    if (!brands.length) return el("div", {}, [dl, el("p", { class: "note", text: "Tip: add your usual brands in Settings to pick them here with one tap." })]);
+    var wrap = el("div", { class: "brand-picks", role: "group", "aria-label": "Preset brands" });
+    brands.forEach(function (b) {
+      var dot = el("span", { class: "pick-dot", "aria-hidden": "true" }); dot.style.background = /^#[0-9a-f]{6}$/i.test(b.color || "") ? b.color : defaultColor(b.name);
+      wrap.appendChild(el("button", { class: "pick", type: "button", "data-name": b.name, onclick: function () { $("fStore").value = b.name; markPick(); } }, [dot, el("span", { text: b.name })]));
+    });
+    return el("div", {}, [dl, wrap]);
+  }
+  function markPick() {
+    var v = ($("fStore") ? $("fStore").value : "").trim().toLowerCase();
+    Array.prototype.forEach.call(document.querySelectorAll(".pick"), function (p) { p.setAttribute("aria-pressed", String(p.getAttribute("data-name").toLowerCase() === v)); });
+  }
+
   function openForm(id) {
     editId = id || null; mode = "form";
     if ($("scrim").hidden) openSheet();
@@ -657,7 +715,8 @@ textarea { resize: vertical; min-height: 64px; }
     ["Shared"].concat(settings.people).forEach(function (p) { holderSel.appendChild(el("option", { value: p, text: p })); });
     var err = el("div", { class: "err", id: "fErr", role: "alert" });
     var form = el("form", { class: "box", onsubmit: function (e) { e.preventDefault(); saveForm(); } }, [
-      el("label", { for: "fStore" }, ["Store or brand", el("input", { id: "fStore", required: "required", autocomplete: "off", placeholder: "e.g. John Lewis" })]),
+      el("label", { for: "fStore" }, ["Store or brand", el("input", { id: "fStore", required: "required", autocomplete: "off", placeholder: "Pick below or type a name", list: "fBrandList" })]),
+      brandPicker(),
       el("div", { class: "shot-pick" }, [
         el("span", { class: "note", text: "Screenshot of the card (with the barcode)" }),
         el("div", { class: "shot-prev" }, [
@@ -697,26 +756,58 @@ textarea { resize: vertical; min-height: 64px; }
       $("fStore").value = c.store || ""; $("fBal").value = penceToInput(c.balanceP); $("fInit").value = penceToInput(c.initialP);
       holderSel.value = holderLabel(c.holder); $("fExp").value = c.expiry || ""; $("fNum").value = c.number || ""; $("fPin").value = c.pin || ""; $("fNotes").value = c.notes || "";
     } else holderSel.value = "Shared";
-    try { $("fStore").focus({ preventScroll: true }); } catch (e) {}
+    $("fStore").addEventListener("input", markPick); markPick();
+    $("sheet").scrollTop = 0;
+  }
+
+  function brandRow(name, color) {
+    var row = el("div", { class: "brand-row" });
+    var nameIn = el("input", { class: "b-name", autocomplete: "off", placeholder: "Brand name", "aria-label": "Brand name" });
+    var colIn = el("input", { class: "b-color", type: "color", "aria-label": "Colour" });
+    var sw = el("span", { class: "badge b-prev", "aria-hidden": "true" });
+    function sync() { var tmp = colIn.value; sw.textContent = initials(nameIn.value || "?"); sw.style.background = tmp; sw.style.background = "linear-gradient(140deg, " + tmp + ", color-mix(in srgb, " + tmp + " 70%, #000))"; sw.style.color = isLight(tmp) ? "#15161d" : "#fff"; }
+    nameIn.value = name || ""; colIn.value = color || defaultColor(name || String(Math.random()));
+    nameIn.addEventListener("input", sync); colIn.addEventListener("input", sync);
+    var colWrap = el("label", { class: "b-colwrap", title: "Change colour" }, [sw, colIn]);
+    row.appendChild(colWrap); row.appendChild(nameIn);
+    row.appendChild(el("button", { class: "mini b-del", type: "button", "aria-label": "Remove brand", text: "Remove", onclick: function () { row.remove(); } }));
+    sync();
+    return row;
   }
 
   function openSettings() {
     mode = "settings"; openSheet();
     var sheet = $("sheet"); sheet.textContent = "";
-    sheet.appendChild(head("Names and currency"));
+    sheet.appendChild(head("Settings"));
     var cur = el("select", { id: "sCur" });
     [["GBP", "Pounds (£)"], ["EUR", "Euros (€)"], ["USD", "US dollars ($)"], ["CAD", "Canadian dollars ($)"], ["AUD", "Australian dollars ($)"]].forEach(function (o) { cur.appendChild(el("option", { value: o[0], text: o[1] })); });
-    sheet.appendChild(el("form", { class: "box", onsubmit: function (e) { e.preventDefault(); saveSettings(); } }, [
-      el("div", { class: "row" }, [
-        el("label", { for: "sP1" }, ["First person", el("input", { id: "sP1", autocomplete: "off" })]),
-        el("label", { for: "sP2" }, ["Second person", el("input", { id: "sP2", autocomplete: "off" })])
+    // Brands: the saved list, plus any store already on a card that isn't in it yet.
+    var list = (settings.brands || []).map(function (b) { return { name: b.name, color: b.color }; });
+    cards.forEach(function (c) { if (c.store && !brandOf(c.store) && !list.some(function (b) { return b.name.toLowerCase() === c.store.trim().toLowerCase(); })) list.push({ name: c.store.trim(), color: defaultColor(c.store) }); });
+    list.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var brandsBox = el("div", { class: "brand-list", id: "sBrands" });
+    list.forEach(function (b) { brandsBox.appendChild(brandRow(b.name, b.color)); });
+    sheet.appendChild(el("form", { class: "settings", onsubmit: function (e) { e.preventDefault(); saveSettings(); } }, [
+      el("div", { class: "box" }, [
+        el("h3", { text: "People" }),
+        el("div", { class: "row" }, [
+          el("label", { for: "sP1" }, ["First person", el("input", { id: "sP1", autocomplete: "off" })]),
+          el("label", { for: "sP2" }, ["Second person", el("input", { id: "sP2", autocomplete: "off" })])
+        ]),
+        el("p", { class: "note", text: "Renaming someone also moves their cards to the new name." }),
+        el("label", { for: "sCur" }, ["Currency", cur])
       ]),
-      el("label", { for: "sCur" }, ["Currency", cur]),
-      el("p", { class: "note", text: "Renaming someone also moves their cards to the new name." }),
+      el("div", { class: "box" }, [
+        el("h3", { text: "Brands" }),
+        el("p", { class: "note", text: "These appear as quick picks when you add a card. Tap a badge to change that brand's colour." }),
+        brandsBox,
+        el("button", { class: "btn", type: "button", id: "sAddBrand", text: "Add brand", onclick: function () { var r = brandRow("", ""); brandsBox.appendChild(r); r.querySelector(".b-name").focus(); } })
+      ]),
       el("div", { class: "err", id: "sErr", role: "alert" }),
-      el("div", { class: "actions" }, [el("button", { class: "btn primary", type: "submit", text: "Save" }), el("button", { class: "btn ghost", type: "button", text: "Cancel", onclick: closeSheet })])
+      el("div", { class: "actions" }, [el("button", { class: "btn primary", type: "submit", text: "Save settings" }), el("button", { class: "btn ghost", type: "button", text: "Cancel", onclick: closeSheet })])
     ]));
     $("sP1").value = settings.people[0] || ""; $("sP2").value = settings.people[1] || ""; cur.value = settings.currency || "GBP";
+    $("sheet").scrollTop = 0;
   }
 
   // ---------- Screenshots ----------
@@ -856,7 +947,13 @@ textarea { resize: vertical; min-height: 64px; }
     } else {
       body.status = bal === 0 ? "used" : "active"; body.history = []; body.createdAt = now();
       if (!body.hasImage) body.hasImage = false;
-      p = pre.then(function () { return db.doc("cards/" + id).set(body); }).then(function () { toast("Card added"); closeSheet(); });
+      p = pre.then(function () { return db.doc("cards/" + id).set(body); }).then(function () {
+        if (!brandOf(store)) {
+          var nb = (settings.brands || []).concat([{ name: store, color: defaultColor(store) }]).sort(function (x, y) { return x.name.localeCompare(y.name); });
+          db.doc("settings/main").set({ people: settings.people, currency: settings.currency || "GBP", brands: nb }).catch(function () {});
+        }
+        toast("Card added"); closeSheet();
+      });
     }
     p.catch(function (e) { var b = $("fSave"); if (b) b.disabled = false; writeFailed(e); });
   }
@@ -900,7 +997,13 @@ textarea { resize: vertical; min-height: 64px; }
     if (!a || !b) { err.textContent = "Give both people a name."; return; }
     if (a === b || a === "Shared" || b === "Shared") { err.textContent = "Use two different names (not \"Shared\")."; return; }
     var old = settings.people.slice();
-    var next = { people: [a, b], currency: $("sCur").value };
+    var brands = [], seen = {};
+    Array.prototype.forEach.call(document.querySelectorAll("#sBrands .brand-row"), function (r) {
+      var n = r.querySelector(".b-name").value.trim(), c = r.querySelector(".b-color").value;
+      if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; brands.push({ name: n, color: c }); }
+    });
+    brands.sort(function (x, y) { return x.name.localeCompare(y.name); });
+    var next = { people: [a, b], currency: $("sCur").value, brands: brands };
     db.doc("settings/main").set(next).then(function () {
       // Move cards held under a renamed person to the new name, one write per card.
       var renames = [[old[0], a], [old[1], b]].filter(function (r) { return r[0] && r[0] !== r[1]; });
@@ -911,7 +1014,7 @@ textarea { resize: vertical; min-height: 64px; }
         chain = chain.then(function () { return db.doc("cards/" + c.id).update({ holder: to }); });
       });
       if (filter !== "all" && filter !== "Shared") filter = "all";
-      return chain.then(function () { toast("Saved"); closeSheet(); });
+      return chain.then(function () { toast("Settings saved"); closeSheet(); });
     }).catch(writeFailed);
   }
 
@@ -927,7 +1030,7 @@ textarea { resize: vertical; min-height: 64px; }
   var me = "";
 
   function makeDemoDb() {
-    var KEY = "giftcard-wallet-demo";
+    var KEY = "giftcard-wallet-demo-v2";
     var data = {};
     try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { data = {}; }
     var listeners = [];
@@ -986,12 +1089,15 @@ textarea { resize: vertical; min-height: 64px; }
   function seedDemo(d) {
     function inDays(n) { var t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); }
     var at = now();
-    d.doc("settings/main").set({ people: ["Rex", "Wife"], currency: "GBP" });
+    d.doc("settings/main").set({ people: ["Rex", "Emily"], currency: "GBP", brands: [
+      { name: "Amazon", color: "#232f3e" }, { name: "Boots", color: "#0b3d91" }, { name: "Costa Coffee", color: "#7a1f3d" },
+      { name: "John Lewis", color: "#1c1c1c" }, { name: "Marks & Spencer", color: "#1f4d3f" }, { name: "Tesco", color: "#00539f" }
+    ] });
     d.doc("images/demo1").set({ dataUrl: exampleCardImage("Marks & Spencer", "6335 0012 3456 7890"), at: at });
     d.doc("cards/demo1").set({ hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
       history: [{ id: "h1", amountP: -1760, note: "Food hall", at: at, by: "Rex" }] });
-    d.doc("cards/demo2").set({ store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Wife", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
-      history: [{ id: "h2", amountP: -310, note: "Flat whites", at: at, by: "Wife" }, { id: "h3", amountP: -310, note: "", at: at, by: "Wife" }] });
+    d.doc("cards/demo2").set({ store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Emily", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
+      history: [{ id: "h2", amountP: -310, note: "Flat whites", at: at, by: "Emily" }, { id: "h3", amountP: -310, note: "", at: at, by: "Emily" }] });
     d.doc("cards/demo3").set({ store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at, history: [] });
   }
 
@@ -1013,7 +1119,7 @@ textarea { resize: vertical; min-height: 64px; }
     unsubs.push(db.doc("settings/main").onSnapshot(function (s) {
       if (s.exists) {
         var d2 = s.data();
-        settings = { people: Array.isArray(d2.people) && d2.people.length === 2 ? d2.people.slice() : settings.people, currency: d2.currency || "GBP" };
+        settings = { people: Array.isArray(d2.people) && d2.people.length === 2 ? d2.people.slice() : settings.people, currency: d2.currency || "GBP", brands: Array.isArray(d2.brands) ? d2.brands.filter(function (b) { return b && b.name; }) : [] };
         render();
       }
     }, function () {}));
