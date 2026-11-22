@@ -145,6 +145,14 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .stack .tile + .tile { margin-top: calc(-63.08% + 62px); box-shadow: 0 -6px 18px rgba(0,0,0,.14), 0 1px 0 rgba(255,255,255,.18) inset; }
 }
 
+.nudge { display: flex; align-items: center; gap: 12px; padding: 12px 10px 12px 14px; border-radius: 16px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--shadow); }
+.nudge.warn { box-shadow: inset 4px 0 0 var(--warn), 0 0 0 1px var(--line), var(--shadow); }
+.nudge.bad { box-shadow: inset 4px 0 0 var(--bad), 0 0 0 1px var(--line), var(--shadow); }
+.nudge-icon { font-size: 1.5rem; flex: none; }
+.nudge-text { flex: 1 1 auto; min-width: 0; font-weight: 500; }
+.nudge-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.nudge .banner-x { color: var(--muted); }
+@media (max-width: 420px) { .nudge { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 6px; } .nudge-actions { grid-column: 2; justify-self: end; } }
 .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--line); }
 .tabs button { border: 0; background: transparent; border-radius: 12px; padding: 11px 10px; font-weight: 600; color: var(--muted); }
 .tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
@@ -281,6 +289,12 @@ textarea { resize: vertical; min-height: 64px; }
     <span id="flags" class="controls"></span>
   </section>
 
+  <div class="nudge" id="nudge" hidden>
+    <span class="nudge-icon" aria-hidden="true">⏳</span>
+    <span class="nudge-text" id="nudgeText"></span>
+    <span class="nudge-actions"><button class="mini" id="nudgeOpen" type="button">Open card</button><button class="banner-x" id="nudgeClose" type="button" aria-label="Hide this reminder">✕</button></span>
+  </div>
+
   <div class="tabs" id="tabs" role="tablist" aria-label="Which cards">
     <button type="button" role="tab" id="tabActive" aria-selected="true">Active</button>
     <button type="button" role="tab" id="tabUsed" aria-selected="false">Used up</button>
@@ -294,6 +308,8 @@ textarea { resize: vertical; min-height: 64px; }
   <div class="listbar" id="listbar">
     <label class="sortby" for="sort">Sort by
       <select id="sort">
+        <option value="urgent">Use first</option>
+        <option value="age">Oldest first</option>
         <option value="expiry">Expiry (soonest)</option>
         <option value="balance">Balance (highest)</option>
         <option value="recent">Recently added</option>
@@ -454,8 +470,34 @@ textarea { resize: vertical; min-height: 64px; }
   // ---------- Rendering ----------
   function holderLabel(h) { return h || "Shared"; }
   var view = "active";
-  var sortBy = "expiry";
-  try { sortBy = localStorage.getItem("gcw-sort") || "expiry"; } catch (e) {}
+  var sortBy = "urgent";
+  try { sortBy = localStorage.getItem("gcw-sort2") || "urgent"; } catch (e) {}
+  // Card age: when it was added (the "Date added" field, or when it was first saved).
+  var AGE_WARN = 90, AGE_OLD = 180;
+  function addedDate(c) {
+    if (c.added) return c.added;
+    if (!c.createdAt) return "";
+    var d = new Date(c.createdAt); if (isNaN(d)) return "";
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function ageDays(c) { var d = daysUntil(addedDate(c)); return d === null ? null : Math.max(0, -d); }
+  function ageText(days) {
+    if (days === null) return "";
+    if (days === 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 14) return days + " days ago";
+    if (days < 60) return Math.round(days / 7) + " weeks ago";
+    if (days < 365) return Math.round(days / 30.4) + " months ago";
+    var y = Math.floor(days / 365);
+    return y === 1 ? "over a year ago" : "over " + y + " years ago";
+  }
+  function ageKind(days) { return days === null ? "" : days >= AGE_OLD ? "bad" : days >= AGE_WARN ? "warn" : ""; }
+  function expiringSoon(c) { var d = daysUntil(c.expiry); return d !== null && d <= 30; }
+  // Lower = use sooner: cards expiring within 30 days first, then the oldest cards.
+  function urgency(c) {
+    if (expiringSoon(c)) return [0, daysUntil(c.expiry)];
+    var a = ageDays(c); return [1, a === null ? 0 : -a];
+  }
   function visibleCards() {
     var q = query.trim().toLowerCase();
     return cards.filter(function (c) {
@@ -465,10 +507,12 @@ textarea { resize: vertical; min-height: 64px; }
       return true;
     }).sort(function (a, b) {
       var byStore = (a.store || "").localeCompare(b.store || "");
-      if (view === "used" && sortBy === "expiry") return (b.updatedAt || "").localeCompare(a.updatedAt || "");
+      if (view === "used" && (sortBy === "expiry" || sortBy === "urgent")) return (b.updatedAt || "").localeCompare(a.updatedAt || "");
       if (sortBy === "balance") return (b.balanceP - a.balanceP) || byStore;
       if (sortBy === "recent") return (b.createdAt || "").localeCompare(a.createdAt || "") || byStore;
       if (sortBy === "store") return byStore;
+      if (sortBy === "urgent") { var ua = urgency(a), ub = urgency(b); return (ua[0] - ub[0]) || (ua[1] - ub[1]) || byStore; }
+      if (sortBy === "age") return ((ageDays(b) || 0) - (ageDays(a) || 0)) || byStore;
       var da = daysUntil(a.expiry), dbb = daysUntil(b.expiry);
       if (da === null && dbb !== null) return 1;
       if (dbb === null && da !== null) return -1;
@@ -489,8 +533,15 @@ textarea { resize: vertical; min-height: 64px; }
   function rowItem(c) {
     var ex = expiryInfo(c);
     var d = daysUntil(c.expiry);
-    var when = c.expiry ? (d !== null && d < 0 ? "Expired " : "Expires ") + shortDate(c.expiry) : "No expiry";
-    var whenCls = ex && ex.kind ? "when " + ex.kind : "when";
+    var when, whenCls;
+    var age = ageDays(c);
+    if (c.expiry && (expiringSoon(c) || age === null || age < AGE_WARN || c.status === "used")) {
+      when = (d !== null && d < 0 ? "Expired " : "Expires ") + shortDate(c.expiry);
+      whenCls = ex && ex.kind ? "when " + ex.kind : "when";
+    } else if (age !== null) {
+      when = "Added " + ageText(age);
+      whenCls = "when" + (c.status !== "used" && ageKind(age) ? " " + ageKind(age) : "");
+    } else { when = "No expiry"; whenCls = "when"; }
     var sub = c.status === "used" ? "Used up" : (c.initialP && c.initialP !== c.balanceP ? "of " + money(c.initialP) : (c.hasImage ? "Barcode saved" : ""));
     var badge = el("span", { class: "badge", "aria-hidden": "true", text: initials(c.store) });
     paint(badge, c.store, false);
@@ -510,7 +561,8 @@ textarea { resize: vertical; min-height: 64px; }
   function tile(c, asFace) {
     var pct = c.initialP > 0 ? Math.max(0, Math.min(100, Math.round(c.balanceP / c.initialP * 100))) : 100;
     var ex = expiryInfo(c);
-    var info = ex ? ex.text : (c.hasImage ? "Barcode saved" : "No expiry");
+    var tAge = ageDays(c);
+    var info = ex ? ex.text : (tAge !== null ? "Added " + ageText(tAge) : (c.hasImage ? "Barcode saved" : "No expiry"));
     var attrs = asFace
       ? { class: "tile" + (c.status === "used" ? " used" : ""), role: "img", "aria-label": (c.store || "Card") + " gift card, " + money(c.balanceP) + " left" }
       : { class: "tile" + (c.status === "used" ? " used" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } };
@@ -531,6 +583,28 @@ textarea { resize: vertical; min-height: 64px; }
     paint(b, c.store, true);
     return b;
   }
+
+  // A friendly nudge about the card that has been waiting longest.
+  var NUDGES = [
+    "{store} has been sitting in your wallet for {age}. Treat yourselves?",
+    "{money} at {store}, untouched for {age}. Perfect excuse for a date.",
+    "Psst. {store} misses you. It's been {age}, with {money} still on it.",
+    "{store}: {money} unspent for {age}. Spend it before you forget it!"
+  ];
+  function renderNudge(waiting) {
+    var box = $("nudge");
+    var oldest = waiting.slice().sort(function (a, b) { return (ageDays(b) || 0) - (ageDays(a) || 0); })[0];
+    if (!oldest || dismissedNudge === oldest.id) { box.hidden = true; return; }
+    var a = ageDays(oldest);
+    var ageWords = a >= 365 ? ageText(a).replace(" ago", "") : a >= 60 ? Math.round(a / 30.4) + " months" : Math.round(a / 7) + " weeks";
+    var tpl = NUDGES[(oldest.id.length + Math.floor(Date.now() / 864e5)) % NUDGES.length];
+    $("nudgeText").textContent = tpl.replace("{store}", oldest.store || "A card").replace("{age}", ageWords).replace("{money}", money(oldest.balanceP));
+    $("nudgeOpen").onclick = function () { openDetail(oldest.id); };
+    $("nudgeClose").onclick = function () { dismissedNudge = oldest.id; box.hidden = true; };
+    box.className = "nudge " + (ageKind(a) || "warn");
+    box.hidden = false;
+  }
+  var dismissedNudge = "";
 
   function renderChips() {
     var box = $("chips"); box.textContent = "";
@@ -554,6 +628,9 @@ textarea { resize: vertical; min-height: 64px; }
     var expired = active.filter(function (c) { var d = daysUntil(c.expiry); return d !== null && d < 0 && c.balanceP > 0; }).length;
     if (soon) flags.appendChild(el("span", { class: "pill warn", text: soon + " expiring within 30 days" }));
     if (expired) flags.appendChild(el("span", { class: "pill bad", text: expired + " expired with money left" }));
+    var waiting = active.filter(function (c) { var a = ageDays(c); return c.balanceP > 0 && !expiringSoon(c) && a !== null && a >= AGE_WARN; });
+    if (waiting.length) flags.appendChild(el("span", { class: "pill warn", text: waiting.length + " waiting 3+ months" }));
+    renderNudge(waiting);
 
     $("tabActive").textContent = "Active" + (loaded ? " (" + active.length + ")" : "");
     $("tabUsed").textContent = "Used up" + (loaded ? " (" + used.length + ")" : "");
@@ -639,6 +716,11 @@ textarea { resize: vertical; min-height: 64px; }
     }
 
     var kv = el("dl", { class: "kv" });
+    var ad = addedDate(c), ag = ageDays(c);
+    if (ad) {
+      kv.appendChild(el("dt", { text: "Added" }));
+      kv.appendChild(el("dd", {}, [el("span", { text: shortDate(ad) }), el("span", { class: ag !== null && ageKind(ag) && c.status !== "used" ? "pill " + ageKind(ag) : "pill plain note", text: ageText(ag) })]));
+    }
     kv.appendChild(el("dt", { text: "Expiry" }));
     kv.appendChild(el("dd", {}, [ex ? el("span", { class: ex.kind ? "pill " + ex.kind : "", text: ex.text }) : el("span", { text: "No expiry date" })]));
     secretRow("Card number", "num", c.number).forEach(function (n) { kv.appendChild(n); });
@@ -741,8 +823,9 @@ textarea { resize: vertical; min-height: 64px; }
         el("label", { for: "fBal" }, [c ? "Balance left" : "Balance", el("input", { id: "fBal", inputmode: "decimal", autocomplete: "off", placeholder: "50.00" })]),
         el("label", { for: "fInit" }, ["Original value (optional)", el("input", { id: "fInit", inputmode: "decimal", autocomplete: "off", placeholder: "Same as balance" })])
       ]),
+      el("label", { for: "fHolder" }, ["Who has it", holderSel]),
       el("div", { class: "row" }, [
-        el("label", { for: "fHolder" }, ["Who has it", holderSel]),
+        el("label", { for: "fAdded" }, ["Date added", el("input", { id: "fAdded", type: "date" })]),
         el("label", { for: "fExp" }, ["Expiry date (optional)", el("input", { id: "fExp", type: "date" })])
       ]),
       el("div", { class: "row" }, [
@@ -764,7 +847,8 @@ textarea { resize: vertical; min-height: 64px; }
     if (c) {
       $("fStore").value = c.store || ""; $("fBal").value = penceToInput(c.balanceP); $("fInit").value = penceToInput(c.initialP);
       holderSel.value = holderLabel(c.holder); $("fExp").value = c.expiry || ""; $("fNum").value = c.number || ""; $("fPin").value = c.pin || ""; $("fNotes").value = c.notes || "";
-    } else holderSel.value = "Shared";
+      $("fAdded").value = addedDate(c) || todayStr();
+    } else { holderSel.value = "Shared"; $("fAdded").value = todayStr(); }
     $("fStore").addEventListener("input", markPick); markPick();
     $("sheet").scrollTop = 0;
   }
@@ -936,7 +1020,7 @@ textarea { resize: vertical; min-height: 64px; }
     if (!isFinite(init)) init = existing && existing.initialP ? Math.max(existing.initialP, bal) : bal;
     var body = {
       store: store, balanceP: bal, initialP: init, holder: $("fHolder").value,
-      expiry: $("fExp").value || "", number: $("fNum").value.trim(), pin: $("fPin").value.trim(), notes: $("fNotes").value.trim(),
+      expiry: $("fExp").value || "", added: $("fAdded").value || todayStr(), number: $("fNum").value.trim(), pin: $("fPin").value.trim(), notes: $("fNotes").value.trim(),
       updatedAt: now()
     };
     if (pendingShot === "busy") { err.textContent = "Wait a moment, the screenshot is still being prepared."; return; }
@@ -1033,13 +1117,13 @@ textarea { resize: vertical; min-height: 64px; }
   $("search").addEventListener("input", function (e) { query = e.target.value; render(); });
   $("tabActive").addEventListener("click", function () { view = "active"; render(); });
   $("tabUsed").addEventListener("click", function () { view = "used"; render(); });
-  $("sort").addEventListener("change", function (e) { sortBy = e.target.value; try { localStorage.setItem("gcw-sort", sortBy); } catch (x) {} render(); });
+  $("sort").addEventListener("change", function (e) { sortBy = e.target.value; try { localStorage.setItem("gcw-sort2", sortBy); } catch (x) {} render(); });
 
   // ---------- Data ----------
   var me = "";
 
   function makeDemoDb() {
-    var KEY = "giftcard-wallet-demo-v2";
+    var KEY = "giftcard-wallet-demo-v3";
     var data = {};
     try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { data = {}; }
     var listeners = [];
@@ -1103,11 +1187,11 @@ textarea { resize: vertical; min-height: 64px; }
       { name: "John Lewis", color: "#1c1c1c" }, { name: "Marks & Spencer", color: "#1f4d3f" }, { name: "Tesco", color: "#00539f" }
     ] });
     d.doc("images/demo1").set({ dataUrl: exampleCardImage("Marks & Spencer", "6335 0012 3456 7890"), at: at });
-    d.doc("cards/demo1").set({ hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
+    d.doc("cards/demo1").set({ added: inDays(-200), hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
       history: [{ id: "h1", amountP: -1760, note: "Food hall", at: at, by: "Rex" }] });
-    d.doc("cards/demo2").set({ store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Emily", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
+    d.doc("cards/demo2").set({ added: inDays(-20), store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Emily", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
       history: [{ id: "h2", amountP: -310, note: "Flat whites", at: at, by: "Emily" }, { id: "h3", amountP: -310, note: "", at: at, by: "Emily" }] });
-    d.doc("cards/demo3").set({ store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at, history: [] });
+    d.doc("cards/demo3").set({ added: inDays(-100), store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at, history: [] });
   }
 
   function startData(d) {
