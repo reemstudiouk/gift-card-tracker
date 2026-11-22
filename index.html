@@ -145,6 +145,32 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .stack .tile + .tile { margin-top: calc(-63.08% + 62px); box-shadow: 0 -6px 18px rgba(0,0,0,.14), 0 1px 0 rgba(255,255,255,.18) inset; }
 }
 
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--line); }
+.tabs button { border: 0; background: transparent; border-radius: 12px; padding: 11px 10px; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.listbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: -10px; }
+.sortby { flex-direction: row; align-items: center; gap: 6px; font-size: .92rem; color: var(--muted); font-weight: 500; }
+.sortby select { width: auto; padding: 6px 28px 6px 6px; border-radius: 10px; box-shadow: none; background-color: transparent; color: var(--accent); font-weight: 600; font-size: .92rem; }
+.sortby select:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+.count { color: var(--muted); font-size: .92rem; }
+.rows { display: flex; flex-direction: column; background: var(--surface); border-radius: 18px; box-shadow: 0 0 0 1px var(--line), var(--shadow); overflow: hidden; }
+.vrow { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; background: transparent; text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink); }
+.vrow:last-child { border-bottom: 0; }
+@media (hover: hover) { .vrow:hover { background: var(--field); } }
+.vrow:focus-visible { outline-offset: -2px; }
+.badge { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 1.02rem; letter-spacing: -.02em;
+  background: linear-gradient(140deg, hsl(var(--h, 340) var(--card-s) var(--card-l)), hsl(calc(var(--h, 340) + 22) calc(var(--card-s) + 6%) calc(var(--card-l) - 14%))); }
+.vmain { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.vname { font-weight: 600; font-size: 1.02rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vmeta { display: flex; flex-wrap: wrap; gap: 0 6px; color: var(--muted); font-size: .86rem; font-variant-numeric: tabular-nums; }
+.vmeta .sep { opacity: .5; }
+.vmeta .when.warn { color: var(--warn); font-weight: 600; }
+.vmeta .when.bad { color: var(--bad); font-weight: 600; }
+.vright { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.vbal { font-weight: 700; font-size: 1.05rem; }
+.vsub { color: var(--muted); font-size: .82rem; }
+.vrow.used .badge { filter: grayscale(.9); opacity: .6; }
+.vrow.used .vbal { color: var(--muted); }
 .empty { background: var(--surface); border-radius: 20px; padding: 32px 22px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; box-shadow: var(--shadow); }
 .empty h2 { color: var(--ink); }
 .empty p { margin: 0; max-width: 40ch; }
@@ -238,23 +264,35 @@ textarea { resize: vertical; min-height: 64px; }
     <span id="flags" class="controls"></span>
   </section>
 
+  <div class="tabs" id="tabs" role="tablist" aria-label="Which cards">
+    <button type="button" role="tab" id="tabActive" aria-selected="true">Active</button>
+    <button type="button" role="tab" id="tabUsed" aria-selected="false">Used up</button>
+  </div>
+
   <div class="controls" id="controls">
     <div class="seg" id="chips" role="group" aria-label="Show cards held by"></div>
     <input class="search" id="search" type="search" placeholder="Search stores" aria-label="Search stores">
   </div>
 
-  <div id="list" class="grid stack"></div>
+  <div class="listbar" id="listbar">
+    <label class="sortby" for="sort">Sort by
+      <select id="sort">
+        <option value="expiry">Expiry (soonest)</option>
+        <option value="balance">Balance (highest)</option>
+        <option value="recent">Recently added</option>
+        <option value="store">Store (A to Z)</option>
+      </select>
+    </label>
+    <span class="count num" id="count"></span>
+  </div>
+
+  <div id="list" class="rows"></div>
   <div id="emptyState" class="empty" hidden>
     <h2>No gift cards yet</h2>
     <p>Add a card with its store and balance. Anything you add here shows up for both of you straight away.</p>
     <button class="btn primary" id="emptyAdd">Add your first card</button>
   </div>
   <p id="noMatch" class="note" hidden>No cards match that filter.</p>
-
-  <details class="used-wrap" id="usedWrap" hidden>
-    <summary id="usedSummary">Used up</summary>
-    <div id="usedList" class="grid"></div>
-  </details>
   </div>
 
   <footer class="foot note" id="foot">
@@ -365,20 +403,58 @@ textarea { resize: vertical; min-height: 64px; }
 
   // ---------- Rendering ----------
   function holderLabel(h) { return h || "Shared"; }
-  function visibleActive() {
+  var view = "active";
+  var sortBy = "expiry";
+  try { sortBy = localStorage.getItem("gcw-sort") || "expiry"; } catch (e) {}
+  function visibleCards() {
     var q = query.trim().toLowerCase();
     return cards.filter(function (c) {
-      if (c.status === "used") return false;
+      if ((c.status === "used") !== (view === "used")) return false;
       if (filter !== "all" && holderLabel(c.holder) !== filter) return false;
       if (q && (c.store || "").toLowerCase().indexOf(q) === -1) return false;
       return true;
     }).sort(function (a, b) {
+      var byStore = (a.store || "").localeCompare(b.store || "");
+      if (view === "used" && sortBy === "expiry") return (b.updatedAt || "").localeCompare(a.updatedAt || "");
+      if (sortBy === "balance") return (b.balanceP - a.balanceP) || byStore;
+      if (sortBy === "recent") return (b.createdAt || "").localeCompare(a.createdAt || "") || byStore;
+      if (sortBy === "store") return byStore;
       var da = daysUntil(a.expiry), dbb = daysUntil(b.expiry);
       if (da === null && dbb !== null) return 1;
       if (dbb === null && da !== null) return -1;
       if (da !== dbb) return da - dbb;
-      return (a.store || "").localeCompare(b.store || "");
+      return byStore;
     });
+  }
+  function shortDate(dateStr) {
+    if (!dateStr) return "";
+    var p = dateStr.split("-").map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+  function initials(name) {
+    var w = String(name || "?").replace(/[^A-Za-z0-9& ]/g, " ").trim().split(/\s+/).filter(function (x) { return x && x !== "&"; });
+    if (!w.length) return "?";
+    return (w.length > 1 ? w[0].charAt(0) + w[1].charAt(0) : w[0].slice(0, 2)).toUpperCase();
+  }
+  function rowItem(c) {
+    var ex = expiryInfo(c);
+    var d = daysUntil(c.expiry);
+    var when = c.expiry ? (d !== null && d < 0 ? "Expired " : "Expires ") + shortDate(c.expiry) : "No expiry";
+    var whenCls = ex && ex.kind ? "when " + ex.kind : "when";
+    var sub = c.status === "used" ? "Used up" : (c.initialP && c.initialP !== c.balanceP ? "of " + money(c.initialP) : (c.hasImage ? "Barcode saved" : ""));
+    var badge = el("span", { class: "badge", "aria-hidden": "true", text: initials(c.store) });
+    badge.style.setProperty("--h", hueFor(c.store));
+    return el("button", { class: "vrow" + (c.status === "used" ? " used" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + when + ", " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } }, [
+      badge,
+      el("span", { class: "vmain" }, [
+        el("span", { class: "vname", text: c.store || "Untitled card" }),
+        el("span", { class: "vmeta" }, [el("span", { class: whenCls, text: when }), el("span", { class: "sep", "aria-hidden": "true", text: "|" }), el("span", { text: holderLabel(c.holder) })])
+      ]),
+      el("span", { class: "vright" }, [
+        el("span", { class: "vbal num", text: money(c.balanceP) }),
+        sub ? el("span", { class: "vsub num", text: sub }) : null
+      ])
+    ]);
   }
 
   function tile(c, asFace) {
@@ -429,20 +505,26 @@ textarea { resize: vertical; min-height: 64px; }
     if (soon) flags.appendChild(el("span", { class: "pill warn", text: soon + " expiring within 30 days" }));
     if (expired) flags.appendChild(el("span", { class: "pill bad", text: expired + " expired with money left" }));
 
+    $("tabActive").textContent = "Active" + (loaded ? " (" + active.length + ")" : "");
+    $("tabUsed").textContent = "Used up" + (loaded ? " (" + used.length + ")" : "");
+    $("tabActive").setAttribute("aria-selected", String(view === "active"));
+    $("tabUsed").setAttribute("aria-selected", String(view === "used"));
+    $("sort").value = sortBy;
     var list = $("list"); list.textContent = "";
-    var vis = visibleActive();
-    vis.forEach(function (c) { list.appendChild(tile(c)); });
+    var vis = visibleCards();
+    vis.forEach(function (c) { list.appendChild(rowItem(c)); });
+    list.hidden = vis.length === 0;
+    $("count").textContent = vis.length + " card" + (vis.length === 1 ? "" : "s");
     $("emptyState").hidden = !(loaded && cards.length === 0);
     $("emptyAdd").hidden = readOnly;
     $("noMatch").hidden = !(loaded && cards.length > 0 && vis.length === 0);
+    $("noMatch").textContent = (view === "used" && !used.length) ? "No used-up cards yet. Cards move here when their balance reaches zero." : "No cards match that filter.";
     $("controls").hidden = !(cards.length > 0);
+    $("tabs").hidden = !(cards.length > 0);
+    $("listbar").hidden = !(cards.length > 0);
     $("addBtn").hidden = readOnly || !db;
     $("settingsBtn").hidden = readOnly || !db;
 
-    var uw = $("usedWrap"); uw.hidden = used.length === 0;
-    $("usedSummary").textContent = "Used up (" + used.length + ")";
-    var ul = $("usedList"); ul.textContent = "";
-    used.sort(function (a, b) { return (b.updatedAt || "").localeCompare(a.updatedAt || ""); }).forEach(function (c) { ul.appendChild(tile(c)); });
 
     if (mode === "detail") renderDetail();
   }
@@ -837,6 +919,9 @@ textarea { resize: vertical; min-height: 64px; }
   $("emptyAdd").addEventListener("click", function () { openForm(null); });
   $("settingsBtn").addEventListener("click", openSettings);
   $("search").addEventListener("input", function (e) { query = e.target.value; render(); });
+  $("tabActive").addEventListener("click", function () { view = "active"; render(); });
+  $("tabUsed").addEventListener("click", function () { view = "used"; render(); });
+  $("sort").addEventListener("change", function (e) { sortBy = e.target.value; try { localStorage.setItem("gcw-sort", sortBy); } catch (x) {} render(); });
 
   // ---------- Data ----------
   var me = "";
