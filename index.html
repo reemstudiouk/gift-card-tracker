@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gift Card Wallet</title>
+<meta name="theme-color" content="#f1f2f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0e13" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gift Cards">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column; on phones the cards stack like a wallet (each card shows its top strip), on wide screens they sit in a grid. Details open in a bottom sheet; "Add card" floats at the bottom. */
+:root {
+  --bg: #f1f2f6;
+  --surface: #ffffff;
+  --ink: #15161d;
+  --muted: #6b6e7b;
+  --line: #e2e3ea;
+  --field: #f6f7fa;
+  --accent: #e0245e;
+  --accent-ink: #ffffff;
+  --warn: #b45309;
+  --warn-bg: #fdf0dc;
+  --bad: #c2272d;
+  --bad-bg: #fde8e8;
+  --card-l: 44%;
+  --card-s: 58%;
+  --shadow: 0 1px 2px rgba(21, 22, 29, .06), 0 8px 24px rgba(21, 22, 29, .08);
+  --scrim: rgba(13, 14, 19, .38);
+  --font: "Geist", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d0e13; --surface: #171820; --ink: #ecedf2; --muted: #9a9dab; --line: #262833; --field: #1e2029;
+  --accent: #ff4d85; --accent-ink: #1a0610; --warn: #f5a524; --warn-bg: #33250e; --bad: #ff7b7b; --bad-bg: #3a1618;
+  --card-l: 38%; --card-s: 52%; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.45); --scrim: rgba(0,0,0,.55);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0d0e13; --surface: #171820; --ink: #ecedf2; --muted: #9a9dab; --line: #262833; --field: #1e2029;
+  --accent: #ff4d85; --accent-ink: #1a0610; --warn: #f5a524; --warn-bg: #33250e; --bad: #ff7b7b; --bad-bg: #3a1618;
+  --card-l: 38%; --card-s: 52%; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.45); --scrim: rgba(0,0,0,.55);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 120px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -.015em; }
+h1 { font-size: 1.05rem; font-weight: 600; }
+h2 { font-size: 1.3rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.top-actions { display: flex; gap: 8px; }
+.btn { border: 0; background: var(--field); border-radius: 999px; padding: 11px 18px; font-weight: 600; transition: transform .1s ease, background-color .15s ease; }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--bad); background: var(--bad-bg); }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .5; cursor: default; }
+.icon-btn { width: 42px; height: 42px; padding: 0; display: grid; place-items: center; background: var(--surface); box-shadow: var(--shadow); }
+.fab {
+  position: fixed; z-index: 15; left: 50%; transform: translateX(-50%);
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  display: inline-flex; align-items: center; gap: 8px; padding: 15px 24px; font-size: 1rem;
+  box-shadow: 0 10px 30px rgba(224, 36, 94, .35), 0 2px 6px rgba(0,0,0,.12);
+}
+.fab:active { transform: translateX(-50%) scale(.97); }
+.fab svg { flex: none; }
+
+.summary { display: flex; flex-direction: column; gap: 6px; }
+.summary .big { font-size: clamp(2.8rem, 11vw, 3.6rem); font-weight: 600; letter-spacing: -.045em; line-height: 1; }
+.summary .sub { color: var(--muted); font-size: 1rem; }
+#flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+#flags:empty { display: none; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-size: .82rem; font-weight: 600; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.plain::before { display: none; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 14px; background: var(--line); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.chip { border: 0; background: transparent; border-radius: 11px; padding: 7px 14px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.search { flex: 1 1 200px; min-width: 0; border: 0; background: var(--surface); border-radius: 14px; padding: 10px 14px 10px 38px; box-shadow: inset 0 0 0 1px var(--line);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8d99' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 13px center; }
+.search:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+
+/* Cards: real gift-card proportions (85.6 x 54 mm). */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+.tile {
+  --h: 340;
+  position: relative; overflow: hidden; isolation: isolate;
+  aspect-ratio: 85.6 / 54; width: 100%; max-width: 100%;
+  border: 0; border-radius: 20px; padding: 18px 20px; text-align: left; color: #fff;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%),
+    linear-gradient(140deg, hsl(var(--h) var(--card-s) var(--card-l)), hsl(calc(var(--h) + 22) calc(var(--card-s) + 6%) calc(var(--card-l) - 14%)));
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, var(--shadow);
+  transition: transform .2s ease;
+}
+.tile::after { /* thin inner edge like a printed card */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); pointer-events: none;
+}
+.tile-mono {
+  position: absolute; right: 4%; bottom: -14%; z-index: -1; font-size: 8.5rem; font-weight: 700; line-height: 1; letter-spacing: -.06em;
+  color: rgba(255,255,255,.1); pointer-events: none; user-select: none;
+}
+.tile-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 28px; }
+.tile-store { font-size: 1.08rem; font-weight: 600; letter-spacing: -.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-bal { font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.tile-bottom { display: flex; flex-direction: column; gap: 10px; }
+.tile-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .84rem; flex-wrap: wrap; }
+.tile-holder { background: rgba(255,255,255,.2); backdrop-filter: blur(4px); border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+.tile-info { opacity: .88; display: inline-flex; align-items: center; gap: 6px; }
+.tile .flag { background: rgba(0,0,0,.3); color: #fff; padding: 3px 10px; border-radius: 999px; font-weight: 600; opacity: 1; }
+.bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,.22); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: #fff; border-radius: 99px; }
+.tile.used { filter: grayscale(.9); opacity: .7; }
+@media (hover: hover) { .tile:hover { transform: translateY(-4px); } }
+
+/* Phone: the active cards stack like a wallet; each one shows its name and balance. */
+@media (max-width: 639px) {
+  .stack { gap: 0; }
+  .stack .tile + .tile { margin-top: calc(-63.08% + 62px); box-shadow: 0 -6px 18px rgba(0,0,0,.14), 0 1px 0 rgba(255,255,255,.18) inset; }
+}
+
+.empty { background: var(--surface); border-radius: 20px; padding: 32px 22px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; box-shadow: var(--shadow); }
+.empty h2 { color: var(--ink); }
+.empty p { margin: 0; max-width: 40ch; }
+.note { color: var(--muted); font-size: .88rem; margin: 0; }
+.banner { background: var(--warn-bg); color: var(--warn); border-radius: 14px; padding: 12px 16px; font-weight: 500; font-size: .92rem; }
+
+.wrap-inner { display: flex; flex-direction: column; gap: 22px; }
+.foot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; padding-top: 8px; }
+details.used-wrap summary { cursor: pointer; font-weight: 600; color: var(--muted); padding: 6px 0; list-style-position: inside; }
+details.used-wrap .grid { margin-top: 12px; }
+
+/* Bottom sheet */
+.scrim { position: fixed; inset: 0; background: var(--scrim); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  position: relative; background: var(--surface); width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; overscroll-behavior: contain;
+  border-radius: 28px 28px 0 0;
+  padding: 26px max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: 20px; animation: up .28s cubic-bezier(.2, .9, .3, 1);
+}
+.sheet::before { content: ""; position: absolute; top: 9px; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: 99px; background: var(--line); }
+@media (min-width: 700px) { .scrim { align-items: center; } .sheet { border-radius: 28px; } .sheet::before { display: none; } }
+@keyframes up { from { transform: translateY(40px); opacity: .5; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tile, .btn { transition: none; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.sheet-head .x { flex: none; width: 36px; height: 36px; background: var(--field); box-shadow: none; font-size: .9rem; }
+.sheet .tile { cursor: default; flex: none; }
+.sheet .tile:hover { transform: none; }
+.spent-line { color: var(--muted); margin-top: -8px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 12px 18px; align-items: center; margin: 0; }
+.kv dt { color: var(--muted); font-size: .88rem; }
+.kv dd { margin: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+.secret { font-variant-numeric: tabular-nums; letter-spacing: .08em; font-weight: 500; }
+.mini { border: 0; background: var(--field); border-radius: 999px; padding: 4px 12px; font-size: .82rem; font-weight: 600; }
+.box { background: var(--field); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { flex: 1 1 130px; min-width: 0; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; color: var(--muted); font-weight: 500; }
+input, select, textarea { border: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; padding: 11px 13px; background: var(--surface); color: var(--ink); width: 100%; min-width: 0; font-size: 1rem; }
+input:focus, select:focus, textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+textarea { resize: vertical; min-height: 64px; }
+.err { color: var(--bad); font-size: .88rem; font-weight: 500; }
+.err:empty { display: none; }
+.hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.hist li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.hist li:last-child { border-bottom: 0; padding-bottom: 0; }
+.hist .when { color: var(--muted); font-size: .82rem; }
+.hist .amt { font-weight: 600; white-space: nowrap; }
+.hist .amt.plus { color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.shot-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; font-size: 1.05rem; border-radius: 18px; }
+.shot-pick { display: flex; flex-direction: column; gap: 8px; }
+.shot-prev { display: flex; gap: 12px; align-items: center; }
+.shot-prev img { width: 64px; height: 88px; object-fit: cover; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.file-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); gap: 12px; color: #15161d; color-scheme: light; }
+.viewer img { flex: 1 1 auto; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; }
+.viewer .vbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; width: 100%; max-width: 560px; }
+.viewer .vtitle { font-weight: 600; font-size: 1.1rem; }
+.viewer .vclose { border: 0; background: #f1f2f6; color: #15161d; border-radius: 999px; padding: 10px 20px; font-weight: 600; }
+.viewer .vbal { color: #6b6e7b; font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 14px; z-index: 40; font-weight: 500; max-width: calc(100% - 32px); box-shadow: var(--shadow); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Gift Card Wallet</h1>
+    <div class="top-actions">
+      <button class="btn icon-btn" id="settingsBtn" aria-label="Names and currency" title="Names and currency">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="status" class="banner" hidden></div>
+
+  <section id="signIn" class="empty" hidden>
+    <h2>Sign in to see your cards</h2>
+    <p>Use the Google account that's been added to this wallet. Only the two of you can open it.</p>
+    <button class="btn primary" id="signInBtn" type="button">Sign in with Google</button>
+    <p class="err" id="signInErr" role="alert"></p>
+  </section>
+
+  <div id="app" class="wrap-inner">
+
+  <section class="summary" id="summary" aria-live="polite">
+    <span class="big num" id="total">–</span>
+    <span class="sub" id="totalSub">Loading your cards…</span>
+    <span id="flags" class="controls"></span>
+  </section>
+
+  <div class="controls" id="controls">
+    <div class="seg" id="chips" role="group" aria-label="Show cards held by"></div>
+    <input class="search" id="search" type="search" placeholder="Search stores" aria-label="Search stores">
+  </div>
+
+  <div id="list" class="grid stack"></div>
+  <div id="emptyState" class="empty" hidden>
+    <h2>No gift cards yet</h2>
+    <p>Add a card with its store and balance. Anything you add here shows up for both of you straight away.</p>
+    <button class="btn primary" id="emptyAdd">Add your first card</button>
+  </div>
+  <p id="noMatch" class="note" hidden>No cards match that filter.</p>
+
+  <details class="used-wrap" id="usedWrap" hidden>
+    <summary id="usedSummary">Used up</summary>
+    <div id="usedList" class="grid"></div>
+  </details>
+  </div>
+
+  <footer class="foot note" id="foot">
+    <span id="who"></span>
+    <button class="mini" id="signOutBtn" type="button" hidden>Sign out</button>
+  </footer>
+</div>
+
+<button class="btn primary fab" id="addBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add card</button>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
+</div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Gift card barcode">
+  <div class="vbar"><div><div class="vtitle" id="vTitle"></div><div class="vbal" id="vBal"></div></div><button class="vclose" id="vClose" type="button">Done</button></div>
+  <img id="vImg" alt="Gift card screenshot">
+  <div class="vbal">Turn your screen brightness up if the scanner struggles.</div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  "use strict";
+  var db = null;
+  var cards = [];
+  var settings = { people: ["Rex", "Wife"], currency: "GBP" };
+  var loaded = false;
+  var filter = "all";
+  var query = "";
+  var openId = null;
+  var mode = null; // "detail" | "form" | "settings"
+  var editId = null;
+  var revealed = {};
+  var readOnly = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === "text") n.textContent = attrs[k];
+      else if (k === "class") n.className = attrs[k];
+      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+
+  function money(p) {
+    var v = (p || 0) / 100;
+    try { return new Intl.NumberFormat(undefined, { style: "currency", currency: settings.currency || "GBP" }).format(v); }
+    catch (e) { return v.toFixed(2); }
+  }
+  function toPence(str) {
+    var s = String(str || "").replace(/[^0-9.,]/g, "").replace(",", ".");
+    if (!s) return NaN;
+    var v = parseFloat(s);
+    return isFinite(v) ? Math.round(v * 100) : NaN;
+  }
+  function penceToInput(p) { return p ? (p / 100).toFixed(2) : ""; }
+  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function daysUntil(dateStr) {
+    if (!dateStr) return null;
+    var parts = dateStr.split("-").map(Number);
+    var t = new Date(parts[0], parts[1] - 1, parts[2]);
+    var n = new Date(); n.setHours(0, 0, 0, 0);
+    return Math.round((t - n) / 86400000);
+  }
+  function fmtDate(dateStr) {
+    if (!dateStr) return "";
+    var p = dateStr.split("-").map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+  function fmtWhen(iso) {
+    try { return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); } catch (e) { return ""; }
+  }
+  function hueFor(name) {
+    var h = 0; name = (name || "").toLowerCase();
+    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 997;
+    var hues = [342, 2, 14, 152, 168, 192, 212, 228, 250, 268, 288, 318];
+    return hues[h % hues.length];
+  }
+  function expiryInfo(c) {
+    var d = daysUntil(c.expiry);
+    if (d === null) return null;
+    if (d < 0) return { kind: "bad", text: "Expired " + fmtDate(c.expiry) };
+    if (d === 0) return { kind: "warn", text: "Expires today" };
+    if (d <= 30) return { kind: "warn", text: "Expires in " + d + " day" + (d === 1 ? "" : "s") };
+    return { kind: "", text: "Expires " + fmtDate(c.expiry) };
+  }
+  function lastFour(s) { s = String(s || "").replace(/\s+/g, ""); return s.length > 4 ? "•••• " + s.slice(-4) : "••••"; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  function setStatus(msg) { var s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
+
+  function writeFailed(e) {
+    var code = e && e.code;
+    if (code === "permission-denied") { showNotAllowed(); }
+    else if (code === "resource-exhausted") toast("The free storage limit is reached for today. Try again tomorrow.");
+    else toast("Couldn't save. Check your connection and try again.");
+  }
+
+  // ---------- Rendering ----------
+  function holderLabel(h) { return h || "Shared"; }
+  function visibleActive() {
+    var q = query.trim().toLowerCase();
+    return cards.filter(function (c) {
+      if (c.status === "used") return false;
+      if (filter !== "all" && holderLabel(c.holder) !== filter) return false;
+      if (q && (c.store || "").toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    }).sort(function (a, b) {
+      var da = daysUntil(a.expiry), dbb = daysUntil(b.expiry);
+      if (da === null && dbb !== null) return 1;
+      if (dbb === null && da !== null) return -1;
+      if (da !== dbb) return da - dbb;
+      return (a.store || "").localeCompare(b.store || "");
+    });
+  }
+
+  function tile(c, asFace) {
+    var pct = c.initialP > 0 ? Math.max(0, Math.min(100, Math.round(c.balanceP / c.initialP * 100))) : 100;
+    var ex = expiryInfo(c);
+    var info = ex ? ex.text : (c.hasImage ? "Barcode saved" : "No expiry");
+    var attrs = asFace
+      ? { class: "tile" + (c.status === "used" ? " used" : ""), role: "img", "aria-label": (c.store || "Card") + " gift card, " + money(c.balanceP) + " left" }
+      : { class: "tile" + (c.status === "used" ? " used" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } };
+    var b = el(asFace ? "div" : "button", attrs, [
+      el("span", { class: "tile-mono", "aria-hidden": "true", text: (c.store || "?").trim().charAt(0).toUpperCase() }),
+      el("div", { class: "tile-top" }, [
+        el("span", { class: "tile-store", text: c.store || "Untitled card" }),
+        el("span", { class: "tile-bal num", text: money(c.balanceP) })
+      ]),
+      el("div", { class: "tile-bottom" }, [
+        c.initialP ? el("div", { class: "bar", "aria-hidden": "true" }, [el("i", { style: "width:" + pct + "%" })]) : null,
+        el("div", { class: "tile-meta" }, [
+          el("span", { class: "tile-holder", text: holderLabel(c.holder) }),
+          el("span", { class: ex && ex.kind ? "flag" : "tile-info", text: info })
+        ])
+      ])
+    ]);
+    b.style.setProperty("--h", hueFor(c.store));
+    return b;
+  }
+
+  function renderChips() {
+    var box = $("chips"); box.textContent = "";
+    var opts = ["all"].concat(settings.people, ["Shared"]);
+    opts.forEach(function (o) {
+      box.appendChild(el("button", { class: "chip", type: "button", "aria-pressed": String(filter === o), text: o === "all" ? "All" : o, onclick: function () { filter = o; render(); } }));
+    });
+  }
+
+  function render() {
+    renderChips();
+    var active = cards.filter(function (c) { return c.status !== "used"; });
+    var used = cards.filter(function (c) { return c.status === "used"; });
+    var total = active.reduce(function (s, c) { return s + (c.balanceP || 0); }, 0);
+    if (loaded) {
+      $("total").textContent = money(total);
+      $("totalSub").textContent = active.length ? "to spend across " + active.length + " card" + (active.length === 1 ? "" : "s") : "nothing left to spend";
+    }
+    var flags = $("flags"); flags.textContent = "";
+    var soon = active.filter(function (c) { var d = daysUntil(c.expiry); return d !== null && d >= 0 && d <= 30; }).length;
+    var expired = active.filter(function (c) { var d = daysUntil(c.expiry); return d !== null && d < 0 && c.balanceP > 0; }).length;
+    if (soon) flags.appendChild(el("span", { class: "pill warn", text: soon + " expiring within 30 days" }));
+    if (expired) flags.appendChild(el("span", { class: "pill bad", text: expired + " expired with money left" }));
+
+    var list = $("list"); list.textContent = "";
+    var vis = visibleActive();
+    vis.forEach(function (c) { list.appendChild(tile(c)); });
+    $("emptyState").hidden = !(loaded && cards.length === 0);
+    $("emptyAdd").hidden = readOnly;
+    $("noMatch").hidden = !(loaded && cards.length > 0 && vis.length === 0);
+    $("controls").hidden = !(cards.length > 0);
+    $("addBtn").hidden = readOnly || !db;
+    $("settingsBtn").hidden = readOnly || !db;
+
+    var uw = $("usedWrap"); uw.hidden = used.length === 0;
+    $("usedSummary").textContent = "Used up (" + used.length + ")";
+    var ul = $("usedList"); ul.textContent = "";
+    used.sort(function (a, b) { return (b.updatedAt || "").localeCompare(a.updatedAt || ""); }).forEach(function (c) { ul.appendChild(tile(c)); });
+
+    if (mode === "detail") renderDetail();
+  }
+
+  // ---------- Sheet ----------
+  var lastFocus = null;
+  function openSheet() { lastFocus = document.activeElement; $("scrim").hidden = false; }
+  function closeSheet() {
+    $("scrim").hidden = true; $("sheet").textContent = ""; mode = null; openId = null; editId = null; revealed = {};
+    if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
+  }
+  $("scrim").addEventListener("click", function (e) { if (e.target === $("scrim")) closeSheet(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (!$("viewer").hidden) closeViewer(); else if (!$("scrim").hidden) closeSheet();
+  });
+
+  function head(title, sub) {
+    return el("div", { class: "sheet-head" }, [
+      el("div", {}, [el("h2", { id: "sheetTitle", text: title }), sub ? el("div", { class: "note", text: sub }) : null]),
+      el("button", { class: "btn icon-btn x", type: "button", "aria-label": "Close", onclick: closeSheet, text: "✕" })
+    ]);
+  }
+
+  function byId(id) { for (var i = 0; i < cards.length; i++) if (cards[i].id === id) return cards[i]; return null; }
+
+  function openDetail(id) { openId = id; mode = "detail"; revealed = {}; openSheet(); renderDetail(true); $("sheet").scrollTop = 0; }
+
+  function secretRow(label, key, value) {
+    if (!value) return [];
+    var shown = !!revealed[key];
+    return [
+      el("dt", { text: label }),
+      el("dd", {}, [
+        el("span", { class: "secret", text: shown ? value : (key === "pin" ? "••••" : lastFour(value)) }),
+        el("button", { class: "mini", type: "button", text: shown ? "Hide" : "Show", onclick: function () { revealed[key] = !shown; renderDetail(); } }),
+        shown ? el("button", { class: "mini", type: "button", text: "Copy", onclick: function () {
+          try { navigator.clipboard.writeText(value).then(function () { toast("Copied"); }, function () { toast("Copy isn't available here. Select the text instead."); }); }
+          catch (e) { toast("Copy isn't available here. Select the text instead."); }
+        } }) : null
+      ])
+    ];
+  }
+
+  function renderDetail(focusFirst) {
+    var c = byId(openId);
+    var sheet = $("sheet");
+    if (!c) { closeSheet(); return; }
+    var keepAmt = $("amt") ? $("amt").value : "";
+    var keepNote = $("amtNote") ? $("amtNote").value : "";
+    sheet.textContent = "";
+    var ex = expiryInfo(c);
+    sheet.appendChild(head(c.store || "Untitled card"));
+
+    sheet.appendChild(tile(c, true));
+    sheet.appendChild(el("p", { class: "spent-line num", text: money(c.balanceP) + " left" + (c.initialP ? " of " + money(c.initialP) + ", " + money(Math.max(0, c.initialP - c.balanceP)) + " spent" : "") }));
+
+    if (c.hasImage) {
+      sheet.appendChild(el("button", { class: "btn primary shot-btn", type: "button", id: "showShot", onclick: function () { openViewer(c.id); } }, [
+        barcodeIcon(), el("span", { text: "Show barcode to pay" })
+      ]));
+    }
+
+    var kv = el("dl", { class: "kv" });
+    kv.appendChild(el("dt", { text: "Expiry" }));
+    kv.appendChild(el("dd", {}, [ex ? el("span", { class: ex.kind ? "pill " + ex.kind : "", text: ex.text }) : el("span", { text: "No expiry date" })]));
+    secretRow("Card number", "num", c.number).forEach(function (n) { kv.appendChild(n); });
+    secretRow("PIN", "pin", c.pin).forEach(function (n) { kv.appendChild(n); });
+    if (c.notes) { kv.appendChild(el("dt", { text: "Notes" })); kv.appendChild(el("dd", { text: c.notes })); }
+    sheet.appendChild(kv);
+
+    if (!readOnly) {
+      var errBox = el("div", { class: "err", id: "amtErr", role: "alert" });
+      var form = el("form", { class: "box", onsubmit: function (e) { e.preventDefault(); applyAmount(c.id, -1); } }, [
+        el("h3", { text: "Record a purchase" }),
+        el("div", { class: "row" }, [
+          el("label", { for: "amt" }, ["Amount", el("input", { id: "amt", inputmode: "decimal", autocomplete: "off", placeholder: "0.00" })]),
+          el("label", { for: "amtNote" }, ["What for (optional)", el("input", { id: "amtNote", autocomplete: "off", placeholder: "e.g. groceries" })])
+        ]),
+        errBox,
+        el("div", { class: "actions" }, [
+          el("button", { class: "btn primary", type: "submit", text: "Take off balance" }),
+          el("button", { class: "btn", type: "button", text: "Add money", onclick: function () { applyAmount(c.id, 1); } })
+        ])
+      ]);
+      sheet.appendChild(form);
+      $("amt").value = keepAmt; $("amtNote").value = keepNote;
+    }
+
+    var hist = (c.history || []).slice().reverse();
+    var hbox = el("div", { class: "box" }, [el("h3", { text: "History" })]);
+    if (!hist.length) hbox.appendChild(el("p", { class: "note", text: "No purchases recorded yet." }));
+    else {
+      var ul = el("ul", { class: "hist" });
+      hist.forEach(function (h) {
+        var plus = h.amountP > 0;
+        ul.appendChild(el("li", {}, [
+          el("div", {}, [el("div", { text: h.note || (plus ? "Money added" : "Purchase") }), el("div", { class: "when", text: fmtWhen(h.at) + (h.by ? " · " + h.by : "") })]),
+          el("div", { class: "amt num" + (plus ? " plus" : ""), text: (plus ? "+" : "−") + money(Math.abs(h.amountP)) })
+        ]));
+      });
+      hbox.appendChild(ul);
+    }
+    sheet.appendChild(hbox);
+
+    if (!readOnly) {
+      var del = el("button", { class: "btn danger", type: "button", text: "Delete card" });
+      var armed = false, armTimer = null;
+      del.addEventListener("click", function () {
+        if (!armed) { armed = true; del.textContent = "Tap again to delete"; armTimer = setTimeout(function () { armed = false; del.textContent = "Delete card"; }, 4000); return; }
+        clearTimeout(armTimer); deleteCard(c.id);
+      });
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Edit details", onclick: function () { openForm(c.id); } }),
+        c.status === "used"
+          ? el("button", { class: "btn", type: "button", text: "Move back to active", onclick: function () { setStatus2(c.id, "active"); } })
+          : el("button", { class: "btn", type: "button", text: "Mark as used up", onclick: function () { setStatus2(c.id, "used"); } }),
+        del
+      ]));
+    }
+  }
+
+  function openForm(id) {
+    editId = id || null; mode = "form";
+    if ($("scrim").hidden) openSheet();
+    var c = id ? byId(id) : null;
+    var sheet = $("sheet"); sheet.textContent = "";
+    sheet.appendChild(head(c ? "Edit card" : "Add a gift card", c ? null : "Both of you will see it right away."));
+    var holderSel = el("select", { id: "fHolder" });
+    ["Shared"].concat(settings.people).forEach(function (p) { holderSel.appendChild(el("option", { value: p, text: p })); });
+    var err = el("div", { class: "err", id: "fErr", role: "alert" });
+    var form = el("form", { class: "box", onsubmit: function (e) { e.preventDefault(); saveForm(); } }, [
+      el("label", { for: "fStore" }, ["Store or brand", el("input", { id: "fStore", required: "required", autocomplete: "off", placeholder: "e.g. John Lewis" })]),
+      el("div", { class: "shot-pick" }, [
+        el("span", { class: "note", text: "Screenshot of the card (with the barcode)" }),
+        el("div", { class: "shot-prev" }, [
+          el("img", { id: "fShotImg", alt: "Screenshot preview", hidden: "hidden" }),
+          el("div", { class: "actions" }, [
+            el("span", { class: "btn file-btn", id: "fShotBtn" }, [el("span", { id: "fShotLabel", text: "Choose screenshot" }), el("input", { id: "fShot", type: "file", accept: "image/*", "aria-label": "Choose screenshot" })]),
+            el("button", { class: "btn ghost", type: "button", id: "fShotRemove", hidden: "hidden", text: "Remove", onclick: function () { pendingShot = null; showShotPreview(null); } })
+          ])
+        ]),
+        el("span", { class: "note", id: "fShotNote", text: "Pick it from your photos. You can also paste an image here." })
+      ]),
+      el("div", { class: "row" }, [
+        el("label", { for: "fBal" }, [c ? "Balance left" : "Balance", el("input", { id: "fBal", inputmode: "decimal", autocomplete: "off", placeholder: "50.00" })]),
+        el("label", { for: "fInit" }, ["Original value (optional)", el("input", { id: "fInit", inputmode: "decimal", autocomplete: "off", placeholder: "Same as balance" })])
+      ]),
+      el("div", { class: "row" }, [
+        el("label", { for: "fHolder" }, ["Who has it", holderSel]),
+        el("label", { for: "fExp" }, ["Expiry date (optional)", el("input", { id: "fExp", type: "date" })])
+      ]),
+      el("div", { class: "row" }, [
+        el("label", { for: "fNum" }, ["Card number (optional)", el("input", { id: "fNum", autocomplete: "off", inputmode: "numeric" })]),
+        el("label", { for: "fPin" }, ["PIN (optional)", el("input", { id: "fPin", autocomplete: "off", inputmode: "numeric" })])
+      ]),
+      el("label", { for: "fNotes" }, ["Notes (optional)", el("textarea", { id: "fNotes", placeholder: "e.g. only works in store, not online" })]),
+      el("p", { class: "note", text: "Card numbers and PINs are only needed if there's no screenshot. They stay hidden until you tap Show." }),
+      err,
+      el("div", { class: "actions" }, [
+        el("button", { class: "btn primary", type: "submit", id: "fSave", text: c ? "Save changes" : "Add card" }),
+        el("button", { class: "btn ghost", type: "button", text: "Cancel", onclick: function () { if (c) openDetail(c.id); else closeSheet(); } })
+      ])
+    ]);
+    sheet.appendChild(form);
+    pendingShot = undefined;
+    $("fShot").addEventListener("change", function (e) { var f = e.target.files && e.target.files[0]; if (f) takeShot(f); e.target.value = ""; });
+    if (c && c.hasImage) { showShotPreview(imgCache[c.id] ? imgCache[c.id].url : null, true); loadImage(c.id).then(function (u) { if (pendingShot === undefined && u && $("fShotImg")) showShotPreview(u, true); }); }
+    if (c) {
+      $("fStore").value = c.store || ""; $("fBal").value = penceToInput(c.balanceP); $("fInit").value = penceToInput(c.initialP);
+      holderSel.value = holderLabel(c.holder); $("fExp").value = c.expiry || ""; $("fNum").value = c.number || ""; $("fPin").value = c.pin || ""; $("fNotes").value = c.notes || "";
+    } else holderSel.value = "Shared";
+    try { $("fStore").focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  function openSettings() {
+    mode = "settings"; openSheet();
+    var sheet = $("sheet"); sheet.textContent = "";
+    sheet.appendChild(head("Names and currency"));
+    var cur = el("select", { id: "sCur" });
+    [["GBP", "Pounds (£)"], ["EUR", "Euros (€)"], ["USD", "US dollars ($)"], ["CAD", "Canadian dollars ($)"], ["AUD", "Australian dollars ($)"]].forEach(function (o) { cur.appendChild(el("option", { value: o[0], text: o[1] })); });
+    sheet.appendChild(el("form", { class: "box", onsubmit: function (e) { e.preventDefault(); saveSettings(); } }, [
+      el("div", { class: "row" }, [
+        el("label", { for: "sP1" }, ["First person", el("input", { id: "sP1", autocomplete: "off" })]),
+        el("label", { for: "sP2" }, ["Second person", el("input", { id: "sP2", autocomplete: "off" })])
+      ]),
+      el("label", { for: "sCur" }, ["Currency", cur]),
+      el("p", { class: "note", text: "Renaming someone also moves their cards to the new name." }),
+      el("div", { class: "err", id: "sErr", role: "alert" }),
+      el("div", { class: "actions" }, [el("button", { class: "btn primary", type: "submit", text: "Save" }), el("button", { class: "btn ghost", type: "button", text: "Cancel", onclick: closeSheet })])
+    ]));
+    $("sP1").value = settings.people[0] || ""; $("sP2").value = settings.people[1] || ""; cur.value = settings.currency || "GBP";
+  }
+
+  // ---------- Screenshots ----------
+  var imgCache = {};     // cardId -> {url, at}
+  var imgLoading = {};   // cardId -> promise
+  var pendingShot;       // undefined = unchanged, null = removed, "busy", or a data URL
+
+  function loadImage(id) {
+    var c = byId(id);
+    if (!c || !c.hasImage) return Promise.resolve(null);
+    if (imgCache[id] && imgCache[id].at === (c.imageAt || "")) return Promise.resolve(imgCache[id].url);
+    if (imgLoading[id]) return imgLoading[id];
+    imgLoading[id] = db.doc("images/" + id).get().then(function (s) {
+      delete imgLoading[id];
+      var d = s.exists ? s.data() : null;
+      if (!d || !d.dataUrl) return null;
+      imgCache[id] = { url: d.dataUrl, at: d.at || c.imageAt || "" };
+      return d.dataUrl;
+    }, function () { delete imgLoading[id]; return imgCache[id] ? imgCache[id].url : null; });
+    return imgLoading[id];
+  }
+
+  // Fetch every active card's screenshot in the background so it's ready (and cached for offline use) at the till.
+  function prefetchImages() {
+    var todo = cards.filter(function (c) { return c.hasImage && c.status !== "used" && !(imgCache[c.id] && imgCache[c.id].at === (c.imageAt || "")); });
+    var chain = Promise.resolve();
+    todo.forEach(function (c) { chain = chain.then(function () { return loadImage(c.id); }); });
+  }
+
+  function barcodeIcon() {
+    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", "22"); svg.setAttribute("height", "22"); svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    [[3,2],[6,1],[8,2],[11,1],[13,3],[17,1],[19,2]].forEach(function (b) { var r = document.createElementNS(ns, "rect"); r.setAttribute("x", b[0]); r.setAttribute("y", "4"); r.setAttribute("width", b[1]); r.setAttribute("height", "16"); r.setAttribute("fill", "currentColor"); svg.appendChild(r); });
+    return svg;
+  }
+
+  var wakeLock = null;
+  function openViewer(id) {
+    var c = byId(id); if (!c) return;
+    $("vTitle").textContent = c.store || "Gift card";
+    $("vBal").textContent = money(c.balanceP) + " left";
+    var img = $("vImg"); img.removeAttribute("src");
+    $("viewer").hidden = false;
+    loadImage(id).then(function (u) {
+      if (u) img.src = u;
+      else { $("viewer").hidden = true; toast("Couldn't load the screenshot. Check your connection and try again."); }
+    });
+    try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }, function () {}); } catch (e) {}
+    try { $("vClose").focus(); } catch (e) {}
+  }
+  function closeViewer() {
+    $("viewer").hidden = true;
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+  }
+  $("vClose").addEventListener("click", closeViewer);
+  $("vImg").addEventListener("click", closeViewer);
+
+  function showShotPreview(url, existing) {
+    var img = $("fShotImg"); if (!img) return;
+    if (url) { img.src = url; img.hidden = false; } else { img.removeAttribute("src"); img.hidden = true; }
+    $("fShotLabel").textContent = (url || existing) ? "Replace screenshot" : "Choose screenshot";
+    $("fShotRemove").hidden = !(url || existing);
+  }
+
+  // Shrink a screenshot so it fits comfortably in one database record (under ~650 KB) while keeping the barcode sharp.
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var im = new Image();
+      im.onload = function () {
+        URL.revokeObjectURL(url);
+        var maxSide = 1800, q = 0.88, out = null;
+        for (var i = 0; i < 8; i++) {
+          var scale = Math.min(1, maxSide / Math.max(im.naturalWidth, im.naturalHeight));
+          var w = Math.round(im.naturalWidth * scale), h = Math.round(im.naturalHeight * scale);
+          var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+          var cx = cv.getContext("2d"); cx.fillStyle = "#ffffff"; cx.fillRect(0, 0, w, h); cx.drawImage(im, 0, 0, w, h);
+          out = cv.toDataURL("image/jpeg", q);
+          if (out.length < 880000) return resolve(out);
+          if (q > 0.72) q -= 0.08; else maxSide = Math.round(maxSide * 0.82);
+        }
+        reject(new Error("too big"));
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); reject(new Error("unreadable")); };
+      im.src = url;
+    });
+  }
+
+  function takeShot(file) {
+    if (!file || !/^image\//.test(file.type || "image/")) { $("fShotNote").textContent = "That file isn't an image. Choose a screenshot or photo."; return; }
+    pendingShot = "busy"; $("fShotNote").textContent = "Preparing screenshot…";
+    compressImage(file).then(function (u) {
+      pendingShot = u; showShotPreview(u); $("fShotNote").textContent = "Screenshot ready. It saves when you tap " + ($("fSave") ? $("fSave").textContent : "Save") + ".";
+    }, function () {
+      pendingShot = undefined; $("fShotNote").textContent = "Couldn't read that image. Try a different screenshot.";
+    });
+  }
+  document.addEventListener("paste", function (e) {
+    if (mode !== "form" || !e.clipboardData) return;
+    var items = e.clipboardData.files || [];
+    for (var i = 0; i < items.length; i++) if (/^image\//.test(items[i].type)) { e.preventDefault(); takeShot(items[i]); return; }
+  });
+
+  // ---------- Writes ----------
+  function now() { return new Date().toISOString(); }
+
+  function saveForm() {
+    var err = $("fErr"); err.textContent = "";
+    var store = $("fStore").value.trim();
+    var bal = toPence($("fBal").value);
+    var initRaw = $("fInit").value.trim();
+    var init = initRaw ? toPence(initRaw) : NaN;
+    if (!store) { err.textContent = "Add the store or brand name."; return; }
+    if (!isFinite(bal) || bal < 0) { err.textContent = "Enter the balance as a number, like 25.00."; return; }
+    if (initRaw && (!isFinite(init) || init < 0)) { err.textContent = "Enter the original value as a number, or leave it blank."; return; }
+    var existing = editId ? byId(editId) : null;
+    if (!isFinite(init)) init = existing && existing.initialP ? Math.max(existing.initialP, bal) : bal;
+    var body = {
+      store: store, balanceP: bal, initialP: init, holder: $("fHolder").value,
+      expiry: $("fExp").value || "", number: $("fNum").value.trim(), pin: $("fPin").value.trim(), notes: $("fNotes").value.trim(),
+      updatedAt: now()
+    };
+    if (pendingShot === "busy") { err.textContent = "Wait a moment, the screenshot is still being prepared."; return; }
+    $("fSave").disabled = true;
+    var id = existing ? existing.id : db.collection("cards").doc().id;
+    var shot = pendingShot;
+    var pre = Promise.resolve();
+    if (shot) { body.hasImage = true; body.imageAt = now(); pre = db.doc("images/" + id).set({ dataUrl: shot, at: body.imageAt }).then(function () { imgCache[id] = { url: shot, at: body.imageAt }; }); }
+    else if (shot === null) { body.hasImage = false; body.imageAt = ""; pre = db.doc("images/" + id).delete().then(function () { delete imgCache[id]; }); }
+    var p;
+    if (existing) {
+      var hist = (existing.history || []).slice();
+      if (existing.balanceP !== bal) hist.push({ id: uid(), amountP: bal - existing.balanceP, note: "Balance corrected", at: now(), by: me });
+      body.history = hist;
+      body.status = bal === 0 ? "used" : (existing.status === "used" && bal > 0 ? "active" : existing.status || "active");
+      p = pre.then(function () { return db.doc("cards/" + existing.id).update(body); }).then(function () { toast("Saved"); openDetail(existing.id); });
+    } else {
+      body.status = bal === 0 ? "used" : "active"; body.history = []; body.createdAt = now();
+      if (!body.hasImage) body.hasImage = false;
+      p = pre.then(function () { return db.doc("cards/" + id).set(body); }).then(function () { toast("Card added"); closeSheet(); });
+    }
+    p.catch(function (e) { var b = $("fSave"); if (b) b.disabled = false; writeFailed(e); });
+  }
+
+  var busy = false;
+  function applyAmount(id, sign) {
+    if (busy) return;
+    var c = byId(id); var err = $("amtErr"); err.textContent = "";
+    var amt = toPence($("amt").value);
+    if (!isFinite(amt) || amt <= 0) { err.textContent = "Enter an amount, like 12.50."; return; }
+    var next = c.balanceP + sign * amt;
+    if (next < 0) { err.textContent = "That's more than the " + money(c.balanceP) + " left on this card."; return; }
+    var hist = (c.history || []).slice();
+    hist.push({ id: uid(), amountP: sign * amt, note: $("amtNote").value.trim(), at: now(), by: me });
+    var upd = { balanceP: next, history: hist, updatedAt: now() };
+    if (sign > 0 && next > (c.initialP || 0)) upd.initialP = next;
+    if (next === 0) upd.status = "used";
+    else if (c.status === "used") upd.status = "active";
+    busy = true;
+    db.doc("cards/" + id).update(upd).then(function () {
+      busy = false; $("amt").value = ""; $("amtNote").value = "";
+      toast(next === 0 ? "Card used up. Moved to Used up." : (sign < 0 ? money(amt) + " taken off. " + money(next) + " left." : money(amt) + " added."));
+      if (next === 0) closeSheet();
+    }, function (e) { busy = false; writeFailed(e); });
+  }
+
+  function setStatus2(id, status) {
+    db.doc("cards/" + id).update({ status: status, updatedAt: now() }).then(function () {
+      toast(status === "used" ? "Moved to Used up" : "Moved back to active"); closeSheet();
+    }, writeFailed);
+  }
+
+  function deleteCard(id) {
+    var c = byId(id);
+    var pre = c && c.hasImage ? db.doc("images/" + id).delete() : Promise.resolve();
+    pre.then(function () { return db.doc("cards/" + id).delete(); }).then(function () { delete imgCache[id]; toast("Card deleted"); closeSheet(); }, writeFailed);
+  }
+
+  function saveSettings() {
+    var a = $("sP1").value.trim(), b = $("sP2").value.trim(), err = $("sErr");
+    if (!a || !b) { err.textContent = "Give both people a name."; return; }
+    if (a === b || a === "Shared" || b === "Shared") { err.textContent = "Use two different names (not \"Shared\")."; return; }
+    var old = settings.people.slice();
+    var next = { people: [a, b], currency: $("sCur").value };
+    db.doc("settings/main").set(next).then(function () {
+      // Move cards held under a renamed person to the new name, one write per card.
+      var renames = [[old[0], a], [old[1], b]].filter(function (r) { return r[0] && r[0] !== r[1]; });
+      var jobs = cards.filter(function (c) { return renames.some(function (r) { return r[0] === c.holder; }); });
+      var chain = Promise.resolve();
+      jobs.forEach(function (c) {
+        var to = renames.filter(function (r) { return r[0] === c.holder; })[0][1];
+        chain = chain.then(function () { return db.doc("cards/" + c.id).update({ holder: to }); });
+      });
+      if (filter !== "all" && filter !== "Shared") filter = "all";
+      return chain.then(function () { toast("Saved"); closeSheet(); });
+    }).catch(writeFailed);
+  }
+
+  $("addBtn").addEventListener("click", function () { openForm(null); });
+  $("emptyAdd").addEventListener("click", function () { openForm(null); });
+  $("settingsBtn").addEventListener("click", openSettings);
+  $("search").addEventListener("input", function (e) { query = e.target.value; render(); });
+
+  // ---------- Data ----------
+  var me = "";
+
+  function makeDemoDb() {
+    var KEY = "giftcard-wallet-demo";
+    var data = {};
+    try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { data = {}; }
+    var listeners = [];
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function persist() {
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+      setTimeout(function () { listeners.forEach(function (l) { l(); }); }, 0);
+    }
+    function snapDoc(path) {
+      var v = data[path];
+      return { id: path.split("/").pop(), exists: !!v, data: function () { return v ? clone(v) : undefined; }, metadata: { fromCache: false, hasPendingWrites: false } };
+    }
+    function listen(fn) { listeners.push(fn); setTimeout(fn, 0); return function () { listeners = listeners.filter(function (l) { return l !== fn; }); }; }
+    function docRef(path) {
+      return {
+        id: path.split("/").pop(), path: path,
+        set: function (b) { data[path] = clone(b); persist(); return Promise.resolve(); },
+        update: function (b) { if (!data[path]) return Promise.reject({ code: "not-found" }); Object.assign(data[path], clone(b)); persist(); return Promise.resolve(); },
+        delete: function () { delete data[path]; persist(); return Promise.resolve(); },
+        get: function () { return Promise.resolve(snapDoc(path)); },
+        onSnapshot: function (next) { return listen(function () { next(snapDoc(path)); }); }
+      };
+    }
+    function collRef(name) {
+      return {
+        doc: function (id) { return docRef(name + "/" + (id || uid() + uid())); },
+        onSnapshot: function (next) {
+          return listen(function () {
+            var docs = Object.keys(data).filter(function (k) { var p = k.split("/"); return p.length === 2 && p[0] === name; }).map(snapDoc);
+            next({ docs: docs, size: docs.length, empty: !docs.length, metadata: { fromCache: false, hasPendingWrites: false } });
+          });
+        }
+      };
+    }
+    var api = { doc: docRef, collection: collRef, isEmpty: function () { return Object.keys(data).length === 0; } };
+    return api;
+  }
+
+  // Draws a pretend gift card screenshot with a barcode, used only for the demo's example card.
+  function exampleCardImage(store, number) {
+    var cv = document.createElement("canvas"); cv.width = 720; cv.height = 1100;
+    var x = cv.getContext("2d");
+    x.fillStyle = "#f4f4f4"; x.fillRect(0, 0, 720, 1100);
+    x.fillStyle = "#1f4d3f"; x.fillRect(40, 60, 640, 380);
+    x.fillStyle = "#ffffff"; x.font = "bold 52px sans-serif"; x.fillText(store, 80, 160);
+    x.font = "30px sans-serif"; x.fillText("e-Gift Card · EXAMPLE", 80, 215);
+    x.font = "bold 64px sans-serif"; x.fillText("£50.00", 80, 380);
+    x.fillStyle = "#ffffff"; x.fillRect(40, 500, 640, 420);
+    var bx = 90, seed = 7;
+    while (bx < 630) { seed = (seed * 9301 + 49297) % 233280; var w = 2 + Math.floor(seed / 233280 * 4) * 2; x.fillStyle = "#000"; x.fillRect(bx, 560, w, 240); bx += w + 2 + (seed % 3) * 2; }
+    x.fillStyle = "#000"; x.font = "34px monospace"; x.textAlign = "center"; x.fillText(number, 360, 860);
+    x.fillStyle = "#666"; x.font = "26px sans-serif"; x.fillText("PIN 4821", 360, 1000);
+    return cv.toDataURL("image/jpeg", 0.85);
+  }
+
+  function seedDemo(d) {
+    function inDays(n) { var t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); }
+    var at = now();
+    d.doc("settings/main").set({ people: ["Rex", "Wife"], currency: "GBP" });
+    d.doc("images/demo1").set({ dataUrl: exampleCardImage("Marks & Spencer", "6335 0012 3456 7890"), at: at });
+    d.doc("cards/demo1").set({ hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
+      history: [{ id: "h1", amountP: -1760, note: "Food hall", at: at, by: "Rex" }] });
+    d.doc("cards/demo2").set({ store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Wife", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
+      history: [{ id: "h2", amountP: -310, note: "Flat whites", at: at, by: "Wife" }, { id: "h3", amountP: -310, note: "", at: at, by: "Wife" }] });
+    d.doc("cards/demo3").set({ store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at, history: [] });
+  }
+
+  function startData(d) {
+    db = d;
+    var timer = setTimeout(function () {
+      setStatus(loaded ? "Can't reach your saved cards right now. What you see may be out of date." : "Can't reach your saved cards yet. Check your connection; the app keeps trying.");
+    }, 10000);
+    unsubs.push(db.collection("cards").onSnapshot(function (snap) {
+      cards = snap.docs.map(function (s) { var o = Object.assign({}, s.data()); o.id = s.id; o.balanceP = Number(o.balanceP) || 0; o.initialP = Number(o.initialP) || 0; return o; });
+      if (!snap.metadata.fromCache) { clearTimeout(timer); if (!readOnly && !demo) setStatus(""); }
+      loaded = true; render(); prefetchImages();
+    }, function (e) {
+      clearTimeout(timer); loaded = true;
+      if (e && e.code === "permission-denied") showNotAllowed();
+      else setStatus("Couldn't load your cards. Reload the page to try again.");
+      render();
+    }));
+    unsubs.push(db.doc("settings/main").onSnapshot(function (s) {
+      if (s.exists) {
+        var d2 = s.data();
+        settings = { people: Array.isArray(d2.people) && d2.people.length === 2 ? d2.people.slice() : settings.people, currency: d2.currency || "GBP" };
+        render();
+      }
+    }, function () {}));
+  }
+
+  var unsubs = [];
+  var demo = false;
+  function stopData() { unsubs.forEach(function (u) { try { u(); } catch (e) {} }); unsubs = []; db = null; cards = []; loaded = false; }
+
+  function showApp(on) { $("app").hidden = !on; $("signIn").hidden = on; }
+
+  function showNotAllowed() {
+    readOnly = true;
+    showApp(false);
+    $("signInErr").textContent = "The account " + (auth && auth.currentUser ? auth.currentUser.email : "") + " isn't on this wallet's list. Sign out and use the account that was added, or ask for it to be added.";
+    $("signInBtn").hidden = true;
+  }
+
+  var auth = null;
+  var cfg = window.GIFT_CARD_FIREBASE_CONFIG;
+  var configured = cfg && cfg.apiKey && String(cfg.apiKey).indexOf("PASTE") !== 0;
+
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  }
+
+  render();
+  if (!configured) {
+    demo = true; me = "Rex";
+    var d = makeDemoDb();
+    if (d.isEmpty()) seedDemo(d);
+    showApp(true);
+    setStatus("Demo mode with example cards. Changes stay on this device until you set up sharing.");
+    $("who").textContent = "Demo mode";
+    startData(d);
+  } else {
+    var V = "10.12.2", base = "https://www.gstatic.com/firebasejs/" + V + "/";
+    loadScript(base + "firebase-app-compat.js")
+      .then(function () { return Promise.all([loadScript(base + "firebase-auth-compat.js"), loadScript(base + "firebase-firestore-compat.js")]); })
+      .then(function () {
+        firebase.initializeApp(cfg);
+        auth = firebase.auth();
+        var fs = firebase.firestore();
+        try { fs.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
+        $("signInBtn").addEventListener("click", function () {
+          $("signInErr").textContent = "";
+          var provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: "select_account" });
+          auth.signInWithPopup(provider).catch(function (e) {
+            if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) return auth.signInWithRedirect(provider);
+            if (e && e.code === "auth/popup-closed-by-user") return;
+            $("signInErr").textContent = "Sign-in didn't work (" + (e && e.code ? e.code : "unknown error") + "). Try again.";
+          });
+        });
+        $("signOutBtn").addEventListener("click", function () { auth.signOut(); });
+        auth.onAuthStateChanged(function (u) {
+          stopData(); readOnly = false; setStatus(""); closeSheet();
+          $("signInBtn").hidden = false; $("signInErr").textContent = "";
+          if (!u) { showApp(false); $("who").textContent = ""; $("signOutBtn").hidden = true; render(); return; }
+          me = (u.displayName || u.email || "").split(" ")[0];
+          $("who").textContent = "Signed in as " + u.email;
+          $("signOutBtn").hidden = false;
+          showApp(true);
+          startData(fs);
+        });
+      })
+      .catch(function () {
+        showApp(false); $("signInBtn").hidden = true;
+        $("signInErr").textContent = "Couldn't load the sign-in service. Check your connection and reload.";
+      });
+  }
+})();
+</script>
+</body>
+</html>

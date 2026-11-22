@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only these two Google accounts can read or change the wallet.
+    // Replace the addresses with yours, then click Publish in the Firebase console.
+    function isAllowed() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          'your.email@gmail.com',
+          'wife.email@gmail.com'
+        ];
+    }
+    match /{document=**} {
+      allow read, write: if isAllowed();
+    }
+  }
+}
