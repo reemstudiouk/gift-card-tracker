@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gift Card Wallet</title>
-<meta name="theme-color" content="#f1f2f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#ffe590" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0d0e13" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gift Cards">
@@ -49,9 +49,15 @@
 * { box-sizing: border-box; }
 html { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 [hidden] { display: none !important; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: #ffe590 url("bg.jpg") center bottom / cover no-repeat; }
+@media (min-aspect-ratio: 3/4) { body::before { background-size: auto 100%; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before {
+  background-image: linear-gradient(rgba(13,14,19,.72), rgba(13,14,19,.72)), url("bg.jpg"); background-color: #2a2516; } }
+:root[data-theme="dark"] body::before { background-image: linear-gradient(rgba(13,14,19,.72), rgba(13,14,19,.72)), url("bg.jpg"); background-color: #2a2516; }
 body {
   margin: 0;
-  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  background: transparent; color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
