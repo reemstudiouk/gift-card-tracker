@@ -356,6 +356,14 @@ textarea { resize: vertical; min-height: 64px; }
 .pal-sw { display: flex; }
 .pal-sw i { width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
 .pal-sw i + i { margin-left: -6px; }
+.links { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: 18px; box-shadow: 0 0 0 1px var(--line), var(--shadow); overflow: hidden; }
+.links li + li { border-top: 1px solid var(--line); }
+.link-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; color: var(--ink); text-decoration: none; }
+.link-name { font-weight: 600; }
+.link-go { color: var(--accent); font-size: .88rem; font-weight: 600; white-space: nowrap; }
+@media (hover: hover) { .link-row:hover { background: var(--field); } }
+.bal-link { color: var(--accent); font-weight: 600; font-size: .92rem; text-decoration: none; }
+.bal-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -656,6 +664,32 @@ textarea { resize: vertical; min-height: 64px; }
     timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>'
   };
 
+  // Official gift card balance-check pages. "test" matches a card's store name.
+  var BALANCE_LINKS = [
+    { name: "Aldi", url: "https://help.aldi.co.uk/gift-card-balance", test: /aldi/ },
+    { name: "ASDA", url: "https://www.asdagiftcards.com/balance-check", test: /asda/ },
+    { name: "Farmfoods", url: "https://www.farmfoods.co.uk/check-balance", test: /farm ?foods/ },
+    { name: "Greggs", url: "https://www.greggs.com/gift-cards#check-gift-card-balance", test: /greggs/ },
+    { name: "M&S", url: "https://www.marksandspencer.com/MSGiftCardBalanceChecker", test: /marks|^m ?(&|and)? ?s$/ },
+    { name: "Morrisons", url: "https://morrisons.cashstar.com/recipient-experience/balance/", test: /morrison/ },
+    { name: "Tesco", url: "https://www.tescogiftcards.com/balance-check", test: /tesco/ }
+  ];
+  function balanceLink(store) {
+    var n = String(store || "").toLowerCase().trim();
+    if (!n) return null;
+    for (var i = 0; i < BALANCE_LINKS.length; i++) if (BALANCE_LINKS[i].test.test(n)) return BALANCE_LINKS[i];
+    return null;
+  }
+  function linkList() {
+    var ul = el("ul", { class: "links" });
+    BALANCE_LINKS.forEach(function (l) {
+      ul.appendChild(el("li", {}, [el("a", { href: l.url, target: "_blank", rel: "noopener", class: "link-row" }, [
+        el("span", { class: "link-name", text: l.name }), el("span", { class: "link-go", "aria-hidden": "true", text: "Check balance ↗" })
+      ])]));
+    });
+    return ul;
+  }
+
   function rowItem(c) {
     var ex = expiryInfo(c);
     var d = daysUntil(c.expiry);
@@ -798,7 +832,7 @@ textarea { resize: vertical; min-height: 64px; }
   function renderActivity(risky, riskP) {
     var pg = $("activityPage"); pg.textContent = "";
     pg.appendChild(el("div", { class: "page-head" }, [el("h2", { text: "Activity" }), risky.length ? el("span", { class: "pill bad", text: risky.length + " urgent" }) : null]));
-    if (!cards.length) { pg.appendChild(el("p", { class: "note", text: "Nothing here yet. Add a card and its story starts here." })); return; }
+    if (!cards.length) { pg.appendChild(el("p", { class: "note", text: "Nothing here yet. Add a card and its story starts here." })); pg.appendChild(el("div", { class: "section-lab", text: "Gift card balance check" })); pg.appendChild(linkList()); return; }
 
     if (risky.length) {
       pg.appendChild(el("div", { class: "section-lab", text: "Use these soon" }));
@@ -854,6 +888,8 @@ textarea { resize: vertical; min-height: 64px; }
       ]));
     });
     pg.appendChild(ul);
+    pg.appendChild(el("div", { class: "section-lab", text: "Gift card balance check" }));
+    pg.appendChild(linkList());
   }
 
   function render() {
@@ -969,6 +1005,7 @@ textarea { resize: vertical; min-height: 64px; }
         el("span", {}, ["Original ", el("b", { text: money(orig) })]),
         el("span", {}, ["Spent ", el("b", { text: money(sp) }), " (" + pctSpent + "%)"])
       ]),
+      balanceLink(c.store) ? el("a", { class: "bal-link", href: balanceLink(c.store).url, target: "_blank", rel: "noopener", text: "Check balance on " + balanceLink(c.store).name + "'s website ↗" }) : null,
       lastUse ? el("div", { class: "note", text: "Last used " + fmtWhen(lastUse.at) + (lastUse.by ? " by " + lastUse.by : "") + ", " + money(-lastUse.amountP) + (lastUse.note ? " on " + lastUse.note : "") }) : null
     ]));
 
