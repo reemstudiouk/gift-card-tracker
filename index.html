@@ -393,17 +393,120 @@ textarea { resize: vertical; min-height: 64px; }
 [data-skin="pixel"] .skin-pick { border-radius: 0; box-shadow: inset 0 0 0 3px var(--line); font-size: 20px; }
 [data-skin="pixel"] .skin-pick.px-pick { font-size: 9px; }
 [data-skin="pixel"] .skin-pick[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--accent); }
+
+/* ===== Stats, expiry alert, days-left badges, spend progress, activity page, bottom menu ===== */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.stat { background: var(--surface); border-radius: 16px; padding: 12px 10px; box-shadow: 0 0 0 1px var(--line), var(--shadow); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
+.stat-ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--field); color: var(--muted); margin-bottom: 4px; }
+.stat-val { font-weight: 700; font-size: 1.15rem; letter-spacing: -.02em; white-space: nowrap; }
+.stat-lab { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.stat.bad .stat-val, .stat.bad .stat-lab { color: var(--bad); }
+.stat.bad .stat-ico { background: var(--bad-bg); color: var(--bad); }
+.alert { background: var(--warn-bg); color: var(--ink); border-radius: 18px; padding: 14px 12px 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.alert.bad { background: var(--bad-bg); }
+.alert-top { display: flex; gap: 12px; align-items: flex-start; }
+.alert-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--warn); color: #fff; font-size: 1.2rem; }
+.alert.bad .alert-ico { background: var(--bad); }
+.alert-main { flex: 1 1 auto; min-width: 0; }
+.alert-title { font-weight: 700; font-size: 1.02rem; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.alert-risk { color: var(--warn); white-space: nowrap; }
+.alert.bad .alert-risk { color: var(--bad); }
+.alert-sub { color: var(--muted); font-size: .88rem; margin-top: 2px; }
+.alert-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.alert-card { border: 0; background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: .86rem; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+.alert-card .dl { color: var(--warn); }
+.alert.bad .alert-card .dl { color: var(--bad); }
+.dleft { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .74rem; font-weight: 700; margin-left: 6px; vertical-align: 2px; white-space: nowrap; background: var(--warn-bg); color: var(--warn); }
+.dleft.bad { background: var(--bad-bg); color: var(--bad); }
+.dleft.ok { background: var(--field); color: var(--muted); }
+.vname .dleft { font-weight: 700; }
+.vrow.urgent { box-shadow: inset 4px 0 0 var(--bad); }
+.spend { display: flex; flex-direction: column; gap: 8px; }
+.spend-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.spend-lab { color: var(--muted); font-size: .76rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.spend-bal { font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; }
+.spend-bal small { font-size: .9rem; color: var(--muted); font-weight: 500; letter-spacing: 0; margin-left: 4px; }
+.pbar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.pbar > i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.spend-legend { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .86rem; flex-wrap: wrap; }
+.spend-legend b { color: var(--ink); font-weight: 600; }
+.hist .bal-after { color: var(--muted); font-size: .78rem; text-align: right; font-weight: 400; }
+.hist .amt-col { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.hist .h-ico { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--field); color: var(--muted); font-size: .85rem; font-weight: 700; }
+.hist .h-main { flex: 1 1 auto; min-width: 0; display: flex; gap: 10px; align-items: center; }
+.page-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.page-head h2 { font-size: 1.4rem; }
+.section-lab { color: var(--muted); font-size: .76rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 4px 0 -12px; }
+.act-card { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: 0 0 0 1px var(--line), var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.act-card-top { display: flex; gap: 12px; align-items: center; }
+.act-card-top .badge { width: 44px; height: 44px; font-size: .9rem; }
+.act-card .actions .btn { flex: 1 1 0; }
+.feed { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: 18px; box-shadow: 0 0 0 1px var(--line), var(--shadow); overflow: hidden; }
+.feed li { display: flex; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); align-items: flex-start; }
+.feed li:last-child { border-bottom: 0; }
+.avatar { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--field); color: var(--ink); font-weight: 700; font-size: .85rem; }
+.feed-main { flex: 1 1 auto; min-width: 0; }
+.feed-what { font-size: .95rem; }
+.feed-what b { font-weight: 600; }
+.feed-note { color: var(--muted); font-size: .85rem; font-style: italic; }
+.feed-when { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+.feed-amt { flex: none; font-weight: 700; white-space: nowrap; }
+.feed-amt.plus { color: var(--accent); }
+.month { background: var(--surface); border-radius: 18px; padding: 16px; box-shadow: 0 0 0 1px var(--line), var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.month-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.month-grid > div { background: var(--field); border-radius: 14px; padding: 12px; }
+.month-grid .v { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; }
+.month-grid .l { color: var(--muted); font-size: .74rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.who-split { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }
+.who-split div { display: flex; justify-content: space-between; }
+.bnav { position: fixed; z-index: 15; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+.bnav button { border: 0; background: transparent; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 4px; font-size: .74rem; font-weight: 600; position: relative; }
+.bnav button[aria-current="page"] { color: var(--accent); }
+.bnav button:active { transform: scale(.95); }
+.bnav .nav-add .nav-ico { width: 44px; height: 32px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; margin: 0 0 1px; }
+.bnav .nav-add { color: var(--ink); }
+.bnav button > svg { margin: 5px 0; }
+.hist .h-ico { background: var(--surface); }
+[data-skin="pixel"] .pill.note { font-size: 8px; }
+.nav-dot { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 17px; height: 17px; border-radius: 99px; padding: 0 5px; background: var(--bad); color: #fff; font-size: .68rem; line-height: 17px; font-weight: 700; }
+@media (min-width: 700px) { .bnav { left: 50%; right: auto; bottom: 16px; transform: translateX(-50%); width: 420px; border-radius: 20px; border: 1px solid var(--line); box-shadow: var(--shadow); padding: 6px 8px; } }
+
+/* 8-bit theme versions */
+[data-skin="pixel"] .stat, [data-skin="pixel"] .act-card, [data-skin="pixel"] .feed, [data-skin="pixel"] .month { border-radius: 0; color: var(--ink); box-shadow: var(--pb), var(--pshade); margin: 0 4px; }
+[data-skin="pixel"] .stats { gap: 14px; margin: 14px 4px 0; }
+[data-skin="pixel"] .stats .stat { margin: 0; }
+[data-skin="pixel"] .stat-ico, [data-skin="pixel"] .avatar, [data-skin="pixel"] .hist .h-ico { border-radius: 0; }
+[data-skin="pixel"] .stat-val, [data-skin="pixel"] .month-grid .v, [data-skin="pixel"] .spend-bal, [data-skin="pixel"] .feed-amt, [data-skin="pixel"] .alert-title { font-family: var(--pfont); font-size: 11px; font-weight: 400; letter-spacing: 0; line-height: 1.5; }
+[data-skin="pixel"] .spend-bal { font-size: 16px; }
+[data-skin="pixel"] .stat-lab, [data-skin="pixel"] .spend-lab, [data-skin="pixel"] .month-grid .l, [data-skin="pixel"] .section-lab { font-family: var(--pfont); font-size: 7px; line-height: 1.6; font-weight: 400; }
+[data-skin="pixel"] .section-lab { color: #b9b9d9; margin-left: 4px; }
+[data-skin="pixel"] .alert { border-radius: 0; background: #ffcd3c; color: #1b1b3a; box-shadow: var(--pb), var(--pshade); margin: 0 4px; }
+[data-skin="pixel"] .alert.bad { background: #ffb3ad; }
+[data-skin="pixel"] .alert-ico, [data-skin="pixel"] .alert-card, [data-skin="pixel"] .dleft, [data-skin="pixel"] .pbar, [data-skin="pixel"] .pbar > i, [data-skin="pixel"] .month-grid > div { border-radius: 0; }
+[data-skin="pixel"] .alert-risk { color: #b3412f; }
+[data-skin="pixel"] .alert-sub { color: #4a4a6a; font-size: 19px; }
+[data-skin="pixel"] .alert-card { font-weight: 400; font-size: 19px; box-shadow: var(--pshade); }
+[data-skin="pixel"] .dleft { font-family: var(--pfont); font-size: 7px; font-weight: 400; padding: 4px 5px; vertical-align: 1px; }
+[data-skin="pixel"] .pbar { height: 12px; background: var(--line); }
+[data-skin="pixel"] .pbar > i { background: #3bb273; }
+[data-skin="pixel"] .page-head h2 { font-size: 13px; color: #ffcd3c; text-shadow: 3px 3px 0 #b3412f; text-transform: uppercase; }
+[data-skin="pixel"] .feed li { border-bottom: 4px dashed var(--line); }
+[data-skin="pixel"] .feed-what, [data-skin="pixel"] .who-split { font-size: 20px; }
+[data-skin="pixel"] .bnav { background: #fdf6e3; border-top: 4px solid #0b0b20; -webkit-backdrop-filter: none; backdrop-filter: none; }
+[data-skin="pixel"] .bnav button { font-family: var(--pfont); font-size: 7px; font-weight: 400; text-transform: uppercase; color: #6b6b8a; gap: 6px; padding-top: 8px; }
+[data-skin="pixel"] .bnav button[aria-current="page"] { color: #e8414a; }
+[data-skin="pixel"] .bnav .nav-add .nav-ico { border-radius: 0; background: #e8414a; color: #fff; box-shadow: inset 0 -4px 0 #9c1f2a; }
+[data-skin="pixel"] .bnav .nav-add { color: #1b1b3a; }
+[data-skin="pixel"] .nav-dot { border-radius: 0; font-family: var(--pfont); font-size: 7px; }
+@media (min-width: 700px) { [data-skin="pixel"] .bnav { border-radius: 0; border: 0; box-shadow: var(--pb), var(--pshade); } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <h1>Gift Card Wallet</h1>
-    <div class="top-actions">
-      <button class="btn icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-      </button>
-    </div>
   </header>
 
   <div id="status" class="banner" role="status" hidden><span id="statusText"></span><button class="banner-x" id="statusClose" type="button" aria-label="Close message">✕</button></div>
@@ -416,12 +519,16 @@ textarea { resize: vertical; min-height: 64px; }
   </section>
 
   <div id="app" class="wrap-inner">
+  <div id="walletPage" class="wrap-inner">
 
   <section class="summary" id="summary" aria-live="polite">
     <span class="big num" id="total">–</span>
     <span class="sub" id="totalSub">Loading your cards…</span>
+    <div class="stats" id="stats" hidden></div>
     <span id="flags" class="controls"></span>
   </section>
+
+  <div class="alert" id="alert" hidden></div>
 
   <div class="nudge" id="nudge" hidden>
     <span class="nudge-icon" aria-hidden="true">⏳</span>
@@ -461,6 +568,8 @@ textarea { resize: vertical; min-height: 64px; }
   </div>
   <p id="noMatch" class="note" hidden>No cards match that filter.</p>
   </div>
+  <div id="activityPage" class="wrap-inner" hidden></div>
+  </div>
 
   <footer class="foot note" id="foot">
     <span id="who"></span>
@@ -468,7 +577,12 @@ textarea { resize: vertical; min-height: 64px; }
   </footer>
 </div>
 
-<button class="btn primary fab" id="addBtn" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add card</button>
+<nav class="bnav" id="bnav" aria-label="Main">
+  <button type="button" id="navWallet" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg><span>Wallet</span></button>
+  <button type="button" id="addBtn" class="nav-add"><span class="nav-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></span><span>Add card</span></button>
+  <button type="button" id="navActivity"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>Activity</span><span class="nav-dot" id="navDot" hidden></span></button>
+  <button type="button" id="settingsBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
+</nav>
 
 <div class="scrim" id="scrim" hidden>
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
@@ -683,6 +797,29 @@ textarea { resize: vertical; min-height: 64px; }
   }
   applySkinColor();
 
+  // Days-left badge for cards with an expiry date in the next 60 days.
+  function daysLeftBadge(c) {
+    if (c.status === "used") return null;
+    var d = daysUntil(c.expiry);
+    if (d === null || d > 60) return null;
+    var txt = d < 0 ? "Expired" : d === 0 ? "Today" : d + "d left";
+    return el("span", { class: "dleft" + (d <= 7 ? " bad" : d <= 30 ? "" : " ok"), text: txt });
+  }
+  function atRisk(list) { return list.filter(function (c) { var d = daysUntil(c.expiry); return c.status !== "used" && c.balanceP > 0 && d !== null && d >= 0 && d <= 30; })
+    .sort(function (a, b) { return daysUntil(a.expiry) - daysUntil(b.expiry); }); }
+  function spentP(c) { return Math.max(0, (c.initialP || 0) - (c.balanceP || 0)); }
+  function startP(c) { return (c.balanceP || 0) - (c.history || []).reduce(function (s, h) { return s + (h.amountP || 0); }, 0); }
+  function icon(d, size) {
+    var w = document.createElement("span");
+    w.innerHTML = '<svg width="' + (size || 16) + '" height="' + (size || 16) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+    return w.firstChild;
+  }
+  var IC = {
+    card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    spent: '<path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
+    timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>'
+  };
+
   function rowItem(c) {
     var ex = expiryInfo(c);
     var d = daysUntil(c.expiry);
@@ -698,10 +835,11 @@ textarea { resize: vertical; min-height: 64px; }
     var sub = c.status === "used" ? "Used up" : (c.initialP && c.initialP !== c.balanceP ? "of " + money(c.initialP) : (c.hasImage ? "Barcode saved" : ""));
     var badge = el("span", { class: "badge", "aria-hidden": "true", text: initials(c.store) });
     paint(badge, c.store, false);
-    return el("button", { class: "vrow" + (c.status === "used" ? " used" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + when + ", " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } }, [
+    var urgentRow = c.status !== "used" && d !== null && d >= 0 && d <= 7 && c.balanceP > 0;
+    return el("button", { class: "vrow" + (c.status === "used" ? " used" : "") + (urgentRow ? " urgent" : ""), type: "button", "aria-label": (c.store || "Card") + ", " + money(c.balanceP) + " left, " + when + ", " + holderLabel(c.holder), onclick: function () { openDetail(c.id); } }, [
       badge,
       el("span", { class: "vmain" }, [
-        el("span", { class: "vname", text: c.store || "Untitled card" }),
+        el("span", { class: "vname" }, [c.store || "Untitled card", daysLeftBadge(c)]),
         el("span", { class: "vmeta" }, [el("span", { class: whenCls, text: when }), el("span", { class: "sep", "aria-hidden": "true", text: "|" }), el("span", { text: holderLabel(c.holder) })]),
         hpBar(c)
       ]),
@@ -768,6 +906,121 @@ textarea { resize: vertical; min-height: 64px; }
     });
   }
 
+  var page = "wallet";
+  function goPage(pg) { page = pg; render(); window.scrollTo(0, 0); }
+
+  function renderStats(active, risky, riskP) {
+    var box = $("stats"); box.textContent = "";
+    box.hidden = !(loaded && cards.length);
+    if (box.hidden) return;
+    var spent = cards.reduce(function (s, c) { return s + spentP(c); }, 0);
+    function stat(ic, val, lab, cls) {
+      return el("div", { class: "stat" + (cls ? " " + cls : "") }, [el("span", { class: "stat-ico" }, [icon(ic, 16)]), el("span", { class: "stat-val num", text: val }), el("span", { class: "stat-lab", text: lab })]);
+    }
+    box.appendChild(stat(IC.card, active.length + (active.length === 1 ? " card" : " cards"), "Active"));
+    box.appendChild(stat(IC.spent, money(spent), "Spent so far"));
+    box.appendChild(risky.length ? stat(IC.timer, risky.length + (risky.length === 1 ? " card" : " cards"), money(riskP) + " expiring", "bad")
+                                 : stat(IC.timer, "None", "Expiring soon"));
+  }
+
+  var dismissedAlert = "";
+  function renderAlert(risky, riskP) {
+    var box = $("alert"); box.textContent = "";
+    var key = risky.map(function (c) { return c.id; }).join(",");
+    if (!risky.length || dismissedAlert === key) { box.hidden = true; return; }
+    var urgent = daysUntil(risky[0].expiry) <= 7;
+    box.className = "alert" + (urgent ? " bad" : "");
+    var n = risky.length;
+    box.appendChild(el("div", { class: "alert-top" }, [
+      el("span", { class: "alert-ico", "aria-hidden": "true", text: "⏳" }),
+      el("div", { class: "alert-main" }, [
+        el("div", { class: "alert-title" }, [el("span", { text: n + (n === 1 ? " card expiring soon" : " cards expiring soon") }), el("span", { class: "alert-risk num", text: money(riskP) + " at risk" })]),
+        el("div", { class: "alert-sub", text: "Don't let free money vanish. Plan a treat before " + (n === 1 ? "it lapses." : "they lapse.") })
+      ]),
+      el("button", { class: "banner-x", type: "button", "aria-label": "Hide this alert", text: "✕", onclick: function () { dismissedAlert = key; box.hidden = true; } })
+    ]));
+    var chips = el("div", { class: "alert-cards" });
+    risky.slice(0, 4).forEach(function (c) {
+      var d = daysUntil(c.expiry);
+      chips.appendChild(el("button", { class: "alert-card", type: "button", onclick: function () { openDetail(c.id); } }, [
+        el("span", { text: c.store || "Card" }), el("span", { class: "dl", text: d === 0 ? "today" : d + "d" })
+      ]));
+    });
+    box.appendChild(chips);
+    box.hidden = false;
+  }
+
+  // ---------- Activity page ----------
+  function feedEvents() {
+    var ev = [];
+    cards.forEach(function (c) {
+      var created = c.createdAt || (addedDate(c) ? addedDate(c) + "T12:00:00" : "");
+      if (created) ev.push({ at: created, who: c.addedBy || "", kind: "added", c: c, amountP: startP(c) });
+      (c.history || []).forEach(function (h) { ev.push({ at: h.at, who: h.by || "", kind: h.amountP < 0 ? "spent" : "topup", c: c, amountP: h.amountP, note: h.note }); });
+    });
+    return ev.filter(function (e) { return e.at; }).sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  }
+  function renderActivity(risky, riskP) {
+    var pg = $("activityPage"); pg.textContent = "";
+    pg.appendChild(el("div", { class: "page-head" }, [el("h2", { text: "Activity" }), risky.length ? el("span", { class: "pill bad", text: risky.length + " urgent" }) : null]));
+    if (!cards.length) { pg.appendChild(el("p", { class: "note", text: "Nothing here yet. Add a card and its story starts here." })); return; }
+
+    if (risky.length) {
+      pg.appendChild(el("div", { class: "section-lab", text: "Use these soon" }));
+      risky.forEach(function (c) {
+        var b = el("span", { class: "badge", "aria-hidden": "true", text: initials(c.store) }); paint(b, c.store, false);
+        pg.appendChild(el("div", { class: "act-card" }, [
+          el("div", { class: "act-card-top" }, [
+            b,
+            el("div", { class: "vmain" }, [el("span", { class: "vname", text: c.store || "Card" }), el("span", { class: "vmeta" }, [el("span", { text: "Expires " + fmtDate(c.expiry) }), el("span", { class: "sep", text: "|" }), el("span", { text: holderLabel(c.holder) })])]),
+            el("div", { class: "vright" }, [el("span", { class: "vbal num", text: money(c.balanceP) }), daysLeftBadge(c)])
+          ]),
+          el("div", { class: "actions" }, [
+            c.hasImage ? el("button", { class: "btn primary", type: "button", text: "Use now", onclick: function () { openViewer(c.id); } }) : null,
+            el("button", { class: "btn", type: "button", text: "View card", onclick: function () { openDetail(c.id); } })
+          ])
+        ]));
+      });
+    }
+
+    // This month
+    var d0 = new Date(); var monthKey = d0.getFullYear() + "-" + String(d0.getMonth() + 1).padStart(2, "0");
+    var monthName = d0.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    var ev = feedEvents();
+    var monthSpent = ev.filter(function (e) { return e.kind === "spent" && String(e.at).slice(0, 7) === monthKey; });
+    var mTotal = monthSpent.reduce(function (s, e) { return s - e.amountP; }, 0);
+    var byWho = {};
+    monthSpent.forEach(function (e) { var w = e.who || "Someone"; byWho[w] = (byWho[w] || 0) - e.amountP; });
+    var split = el("div", { class: "who-split" });
+    Object.keys(byWho).sort().forEach(function (w) { split.appendChild(el("div", {}, [el("span", { text: w }), el("b", { class: "num", text: money(byWho[w]) })])); });
+    pg.appendChild(el("div", { class: "section-lab", text: monthName }));
+    pg.appendChild(el("div", { class: "month" }, [
+      el("div", { class: "month-grid" }, [
+        el("div", {}, [el("div", { class: "l", text: "Spent together" }), el("div", { class: "v num", text: money(mTotal) })]),
+        el("div", {}, [el("div", { class: "l", text: "Times used" }), el("div", { class: "v num", text: String(monthSpent.length) })])
+      ]),
+      monthSpent.length ? split : el("p", { class: "note", text: "No purchases recorded this month yet. Record one from a card's page when you use it." })
+    ]));
+
+    pg.appendChild(el("div", { class: "section-lab", text: "Wallet activity" }));
+    var ul = el("ul", { class: "feed" });
+    ev.slice(0, 60).forEach(function (e) {
+      var who = e.who || "";
+      var verb = e.kind === "added" ? "added" : e.kind === "spent" ? "used" : (e.note === "Balance corrected" ? "corrected" : "topped up");
+      var plus = e.amountP > 0;
+      ul.appendChild(el("li", {}, [
+        el("span", { class: "avatar", "aria-hidden": "true", text: who ? who.charAt(0).toUpperCase() : "•" }),
+        el("div", { class: "feed-main" }, [
+          el("div", { class: "feed-what" }, [who ? el("b", { text: who + " " }) : null, (who ? verb : verb.charAt(0).toUpperCase() + verb.slice(1)) + " ", el("b", { text: e.c.store || "a card" })]),
+          e.note && e.note !== "Balance corrected" ? el("div", { class: "feed-note", text: "\u201C" + e.note + "\u201D" }) : null,
+          el("div", { class: "feed-when", text: fmtWhen(e.at) })
+        ]),
+        e.amountP ? el("span", { class: "feed-amt num" + (plus ? " plus" : ""), text: (plus ? "+" : "−") + money(Math.abs(e.amountP)) }) : null
+      ]));
+    });
+    pg.appendChild(ul);
+  }
+
   function render() {
     renderChips();
     var active = cards.filter(function (c) { return c.status !== "used"; });
@@ -778,9 +1031,11 @@ textarea { resize: vertical; min-height: 64px; }
       $("totalSub").textContent = active.length ? "to spend across " + active.length + " card" + (active.length === 1 ? "" : "s") : "nothing left to spend";
     }
     var flags = $("flags"); flags.textContent = "";
-    var soon = active.filter(function (c) { var d = daysUntil(c.expiry); return d !== null && d >= 0 && d <= 30; }).length;
+    var risky = atRisk(active);
+    var riskP = risky.reduce(function (s, c) { return s + c.balanceP; }, 0);
     var expired = active.filter(function (c) { var d = daysUntil(c.expiry); return d !== null && d < 0 && c.balanceP > 0; }).length;
-    if (soon) flags.appendChild(el("span", { class: "pill warn", text: soon + " expiring within 30 days" }));
+    renderStats(active, risky, riskP);
+    renderAlert(risky, riskP);
     if (expired) flags.appendChild(el("span", { class: "pill bad", text: expired + " expired with money left" }));
     var waiting = active.filter(function (c) { var a = ageDays(c); return c.balanceP > 0 && !expiringSoon(c) && a !== null && a >= AGE_WARN; });
     if (waiting.length) flags.appendChild(el("span", { class: "pill warn", text: waiting.length + " waiting 3+ months" }));
@@ -805,6 +1060,13 @@ textarea { resize: vertical; min-height: 64px; }
     $("listbar").hidden = !(cards.length > 0);
     $("addBtn").hidden = readOnly || !db;
     $("settingsBtn").hidden = readOnly || !db;
+    $("bnav").hidden = !db || !$("signIn").hidden;
+    $("walletPage").hidden = page !== "wallet";
+    $("activityPage").hidden = page !== "activity";
+    $("navWallet").setAttribute("aria-current", page === "wallet" ? "page" : "false");
+    $("navActivity").setAttribute("aria-current", page === "activity" ? "page" : "false");
+    $("navDot").hidden = !risky.length; $("navDot").textContent = risky.length;
+    if (page === "activity") renderActivity(risky, riskP);
 
 
     if (mode === "detail") renderDetail();
@@ -861,7 +1123,19 @@ textarea { resize: vertical; min-height: 64px; }
     sheet.appendChild(head(c.store || "Untitled card"));
 
     sheet.appendChild(tile(c, true));
-    sheet.appendChild(el("p", { class: "spent-line num", text: money(c.balanceP) + " left" + (c.initialP ? " of " + money(c.initialP) + ", " + money(Math.max(0, c.initialP - c.balanceP)) + " spent" : "") }));
+    var orig = Math.max(c.initialP || 0, c.balanceP || 0);
+    var sp = spentP(c), pctLeft = orig > 0 ? Math.round(c.balanceP / orig * 100) : 100, pctSpent = orig > 0 ? Math.round(sp / orig * 100) : 0;
+    var lastUse = (c.history || []).filter(function (h) { return h.amountP < 0; }).slice(-1)[0];
+    sheet.appendChild(el("div", { class: "box spend" }, [
+      el("div", { class: "spend-top" }, [el("span", { class: "spend-lab", text: "Remaining balance" }), daysLeftBadge(c)]),
+      el("div", { class: "spend-bal num" }, [money(c.balanceP), orig ? el("small", { text: "of " + money(orig) }) : null]),
+      el("div", { class: "pbar", role: "img", "aria-label": pctLeft + "% left" }, [el("i", { style: "width:" + pctLeft + "%" })]),
+      el("div", { class: "spend-legend num" }, [
+        el("span", {}, ["Original ", el("b", { text: money(orig) })]),
+        el("span", {}, ["Spent ", el("b", { text: money(sp) }), " (" + pctSpent + "%)"])
+      ]),
+      lastUse ? el("div", { class: "note", text: "Last used " + fmtWhen(lastUse.at) + (lastUse.by ? " by " + lastUse.by : "") + ", " + money(-lastUse.amountP) + (lastUse.note ? " on " + lastUse.note : "") }) : null
+    ]));
 
     if (c.hasImage) {
       sheet.appendChild(el("button", { class: "btn primary shot-btn", type: "button", id: "showShot", onclick: function () { openViewer(c.id); } }, [
@@ -901,19 +1175,26 @@ textarea { resize: vertical; min-height: 64px; }
     }
 
     var hist = (c.history || []).slice().reverse();
-    var hbox = el("div", { class: "box" }, [el("h3", { text: "History" })]);
-    if (!hist.length) hbox.appendChild(el("p", { class: "note", text: "No purchases recorded yet." }));
-    else {
-      var ul = el("ul", { class: "hist" });
-      hist.forEach(function (h) {
-        var plus = h.amountP > 0;
-        ul.appendChild(el("li", {}, [
-          el("div", {}, [el("div", { text: h.note || (plus ? "Money added" : "Purchase") }), el("div", { class: "when", text: fmtWhen(h.at) + (h.by ? " · " + h.by : "") })]),
-          el("div", { class: "amt num" + (plus ? " plus" : ""), text: (plus ? "+" : "−") + money(Math.abs(h.amountP)) })
-        ]));
-      });
-      hbox.appendChild(ul);
+    var nEv = hist.length + 1;
+    var hbox = el("div", { class: "box" }, [el("div", { class: "spend-top" }, [el("h3", { text: "Card activity" }), el("span", { class: "note", text: nEv + (nEv === 1 ? " event" : " events") })])]);
+    var ul = el("ul", { class: "hist" });
+    var running = c.balanceP || 0;
+    function hrow(title, sub, amountP, balAfter, ic) {
+      var plus = amountP > 0;
+      return el("li", {}, [
+        el("div", { class: "h-main" }, [el("span", { class: "h-ico", "aria-hidden": "true", text: ic }), el("div", {}, [el("div", { text: title }), el("div", { class: "when", text: sub })])]),
+        el("div", { class: "amt-col" }, [el("div", { class: "amt num" + (plus ? " plus" : ""), text: (plus ? "+" : "−") + money(Math.abs(amountP)) }), el("div", { class: "bal-after num", text: "Bal " + money(balAfter) })])
+      ]);
     }
+    hist.forEach(function (h) {
+      var plus = h.amountP > 0;
+      ul.appendChild(hrow(h.note || (plus ? "Money added" : "Purchase"), fmtWhen(h.at) + (h.by ? " · by " + h.by : ""), h.amountP, running, plus ? "+" : "−"));
+      running -= h.amountP;
+    });
+    var created = c.createdAt || (addedDate(c) ? addedDate(c) + "T12:00:00" : "");
+    ul.appendChild(hrow("Card added", (created ? fmtWhen(created) : "") + (c.addedBy ? " · by " + c.addedBy : ""), running, running, "★"));
+    hbox.appendChild(ul);
+    if (!hist.length) hbox.appendChild(el("p", { class: "note", text: "Record a purchase above each time you use it, and it shows here for both of you." }));
     sheet.appendChild(hbox);
 
     if (!readOnly) {
@@ -1211,7 +1492,7 @@ textarea { resize: vertical; min-height: 64px; }
       body.status = bal === 0 ? "used" : (existing.status === "used" && bal > 0 ? "active" : existing.status || "active");
       p = pre.then(function () { return db.doc("cards/" + existing.id).update(body); }).then(function () { toast("Saved"); openDetail(existing.id); });
     } else {
-      body.status = bal === 0 ? "used" : "active"; body.history = []; body.createdAt = now();
+      body.status = bal === 0 ? "used" : "active"; body.history = []; body.createdAt = now(); body.addedBy = me || "";
       if (!body.hasImage) body.hasImage = false;
       p = pre.then(function () { return db.doc("cards/" + id).set(body); }).then(function () {
         if (!brandOf(store)) {
@@ -1285,6 +1566,8 @@ textarea { resize: vertical; min-height: 64px; }
   }
 
   $("addBtn").addEventListener("click", function () { openForm(null); });
+  $("navWallet").addEventListener("click", function () { goPage("wallet"); });
+  $("navActivity").addEventListener("click", function () { goPage("activity"); });
   $("emptyAdd").addEventListener("click", function () { openForm(null); });
   $("settingsBtn").addEventListener("click", openSettings);
   $("search").addEventListener("input", function (e) { query = e.target.value; render(); });
@@ -1296,7 +1579,7 @@ textarea { resize: vertical; min-height: 64px; }
   var me = "";
 
   function makeDemoDb() {
-    var KEY = "giftcard-wallet-demo-v3";
+    var KEY = "giftcard-wallet-demo-v4";
     var data = {};
     try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { data = {}; }
     var listeners = [];
@@ -1354,18 +1637,26 @@ textarea { resize: vertical; min-height: 64px; }
 
   function seedDemo(d) {
     function inDays(n) { var t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); }
+    function ago(n, h) { var t = new Date(); t.setDate(t.getDate() - n); t.setHours(h || 12, 15, 0, 0); return t.toISOString(); }
     var at = now();
     d.doc("settings/main").set({ people: ["Rex", "Emily"], currency: "GBP", brands: [
       { name: "Amazon", color: "#232f3e" }, { name: "Boots", color: "#0b3d91" }, { name: "Costa Coffee", color: "#7a1f3d" },
       { name: "John Lewis", color: "#1c1c1c" }, { name: "Marks & Spencer", color: "#1f4d3f" }, { name: "Tesco", color: "#00539f" }
     ] });
     d.doc("images/demo1").set({ dataUrl: exampleCardImage("Marks & Spencer", "6335 0012 3456 7890"), at: at });
-    d.doc("cards/demo1").set({ added: inDays(-200), hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
-      history: [{ id: "h1", amountP: -1760, note: "Food hall", at: at, by: "Rex" }] });
-    d.doc("cards/demo2").set({ added: inDays(-20), store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Emily", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at,
-      history: [{ id: "h2", amountP: -310, note: "Flat whites", at: at, by: "Emily" }, { id: "h3", amountP: -310, note: "", at: at, by: "Emily" }] });
-    d.doc("cards/demo3").set({ added: inDays(-100), store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active", createdAt: at, updatedAt: at, history: [] });
+    d.doc("cards/demo1").set({ added: inDays(-200), hasImage: true, imageAt: at, store: "Marks & Spencer", initialP: 5000, balanceP: 3240, holder: "Rex", expiry: inDays(400), number: "6335 0012 3456 7890", pin: "4821", notes: "Example card", status: "active",
+      createdAt: ago(200, 19), addedBy: "Rex", updatedAt: at,
+      history: [{ id: "h1", amountP: -1760, note: "Food hall", at: ago(150, 13), by: "Rex" }] });
+    d.doc("cards/demo2").set({ added: inDays(-20), store: "Costa Coffee", initialP: 1000, balanceP: 380, holder: "Emily", expiry: inDays(18), number: "", pin: "", notes: "Example card", status: "active",
+      createdAt: ago(20, 9), addedBy: "Emily", updatedAt: at,
+      history: [{ id: "h2", amountP: -310, note: "Flat whites", at: ago(12, 10), by: "Emily" }, { id: "h3", amountP: -310, note: "", at: ago(2, 8), by: "Emily" }] });
+    d.doc("cards/demo3").set({ added: inDays(-100), store: "Amazon", initialP: 2500, balanceP: 2500, holder: "Shared", expiry: "", number: "AQ7K-23PL9-XM4R", pin: "", notes: "Example card", status: "active",
+      createdAt: ago(100, 20), addedBy: "Rex", updatedAt: at, history: [] });
+    d.doc("cards/demo4").set({ added: inDays(-40), store: "Boots", initialP: 2000, balanceP: 1500, holder: "Shared", expiry: inDays(5), number: "", pin: "", notes: "Example card", status: "active",
+      createdAt: ago(40, 18), addedBy: "Emily", updatedAt: at,
+      history: [{ id: "h4", amountP: -500, note: "Sun cream", at: ago(1, 17), by: "Rex" }] });
   }
+
 
   function startData(d) {
     db = d;
