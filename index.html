@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<script>try { var gp = localStorage.getItem("gcw-palette"); if (gp && gp !== "classic") document.documentElement.setAttribute("data-palette", gp); } catch (e) {}</script>
 <style>
 /* Layout: one column; on phones the cards stack like a wallet (each card shows its top strip), on wide screens they sit in a grid. Details open in a bottom sheet; "Add card" floats at the bottom. */
 :root {
@@ -337,6 +338,24 @@ textarea { resize: vertical; min-height: 64px; }
 .hist .h-ico { background: var(--surface); }
 .nav-dot { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 17px; height: 17px; border-radius: 99px; padding: 0 5px; background: var(--bad); color: #fff; font-size: .68rem; line-height: 17px; font-weight: 700; }
 @media (min-width: 700px) { .bnav { left: 50%; right: auto; bottom: 16px; transform: translateX(-50%); width: 420px; border-radius: 20px; border: 1px solid var(--line); box-shadow: var(--shadow); padding: 6px 8px; } }
+
+/* ===== Colour themes (Settings > Theme), chosen per device in localStorage "gcw-palette". Colours only. ===== */
+:root[data-palette="ocean"] { --bg: #eef4fa; --surface: #ffffff; --ink: #0f2233; --muted: #5d7184; --line: #d9e4ee; --field: #f3f7fb; --accent: #1d6fb8; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="forest"] { --bg: #eef2ec; --surface: #ffffff; --ink: #18251b; --muted: #5f6f62; --line: #dce4d8; --field: #f4f7f2; --accent: #2f7d4f; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="lavender"] { --bg: #f3f0fa; --surface: #ffffff; --ink: #221b33; --muted: #6d6582; --line: #e4def2; --field: #f8f6fc; --accent: #7c4dcc; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="sunset"] { --bg: #fdf1ea; --surface: #ffffff; --ink: #2b1a14; --muted: #7d655b; --line: #f1ddd2; --field: #fdf6f2; --accent: #e05a44; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="mint"] { --bg: #f5fbf8; --surface: #ffffff; --ink: #13231c; --muted: #5f7268; --line: #dcece3; --field: #f1f8f4; --accent: #12976f; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="blush"] { --bg: #fbf5ef; --surface: #fffdfa; --ink: #2a1d1f; --muted: #7a6668; --line: #eedfd8; --field: #fbf1ec; --accent: #d35d85; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="mono"] { --bg: #f3f3f3; --surface: #ffffff; --ink: #111111; --muted: #666666; --line: #e0e0e0; --field: #f6f6f6; --accent: #111111; --accent-ink: #ffffff; --warn: #b45309; --warn-bg: #fdf0dc; --bad: #c2272d; --bad-bg: #fde8e8; --card-l: 44%; --card-s: 58%; --shadow: 0 1px 2px rgba(21,22,29,.06), 0 8px 24px rgba(21,22,29,.08); --scrim: rgba(13,14,19,.38); color-scheme: light; }
+:root[data-palette="mono"] { --warn: #333333; --warn-bg: #ebebeb; --bad: #111111; --bad-bg: #e2e2e2; }
+[data-palette="mono"] .badge, [data-palette="mono"] .tile, [data-palette="mono"] .pick-dot, [data-palette="mono"] .b-prev { filter: grayscale(1); }
+:root[data-palette="midnight"] { --bg: #0b1020; --surface: #141a2e; --ink: #e9ecf5; --muted: #9aa3bd; --line: #232a42; --field: #1a2138; --accent: #f2b632; --accent-ink: #1a1405; --warn: #f5a524; --warn-bg: #33270c; --bad: #ff7b7b; --bad-bg: #3a1618; --card-l: 38%; --card-s: 52%; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.45); --scrim: rgba(0,0,0,.55); color-scheme: dark; }
+.pal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pal { border: 0; border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: .84rem; font-weight: 600; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.pal[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 2px var(--accent); }
+.pal-sw { display: flex; }
+.pal-sw i { width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.9); }
+.pal-sw i + i { margin-left: -6px; }
 </style>
 </head>
 <body>
@@ -1119,6 +1138,29 @@ textarea { resize: vertical; min-height: 64px; }
     return row;
   }
 
+  var PALETTES = [["classic", "Classic", "#f1f2f6", "#e0245e", "#15161d"], ["ocean", "Ocean", "#eef4fa", "#1d6fb8", "#0f2233"], ["forest", "Forest", "#eef2ec", "#2f7d4f", "#18251b"], ["lavender", "Lavender", "#f3f0fa", "#7c4dcc", "#221b33"], ["sunset", "Sunset", "#fdf1ea", "#e05a44", "#2b1a14"], ["mint", "Mint", "#f5fbf8", "#12976f", "#13231c"], ["blush", "Blush", "#fbf5ef", "#d35d85", "#2a1d1f"], ["midnight", "Midnight", "#0b1020", "#f2b632", "#e9ecf5"], ["mono", "Mono", "#f3f3f3", "#111111", "#ffffff"]];
+  function getPalette() { return document.documentElement.getAttribute("data-palette") || "classic"; }
+  function setPalette(k) {
+    if (k === "classic") document.documentElement.removeAttribute("data-palette"); else document.documentElement.setAttribute("data-palette", k);
+    try { localStorage.setItem("gcw-palette", k); } catch (e) {}
+    applyPaletteColor();
+    document.querySelectorAll(".pal").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-pal") === k)); });
+  }
+  function applyPaletteColor() {
+    var k = getPalette(), o = PALETTES.filter(function (x) { return x[0] === k; })[0];
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (m, i) { m.setAttribute("content", k === "classic" ? (i === 0 ? "#f1f2f6" : "#0d0e13") : o[2]); });
+  }
+  applyPaletteColor();
+  function paletteBox() {
+    var grid = el("div", { class: "pal-grid", role: "group", "aria-label": "Theme" });
+    PALETTES.forEach(function (o) {
+      grid.appendChild(el("button", { class: "pal", type: "button", "data-pal": o[0], "aria-pressed": String(getPalette() === o[0]), style: "background:" + o[2] + ";color:" + (o[0] === "midnight" ? "#e9ecf5" : "#15161d"), onclick: function () { setPalette(o[0]); } }, [
+        el("span", { class: "pal-sw", "aria-hidden": "true" }, [el("i", { style: "background:" + o[3] }), el("i", { style: "background:" + o[4] })]),
+        o[1]
+      ]));
+    });
+    return el("div", { class: "box" }, [el("h3", { text: "Theme" }), grid, el("p", { class: "note", text: "Changes straight away, on this phone only, so you can each pick your own." })]);
+  }
   function openSettings() {
     mode = "settings"; openSheet();
     var sheet = $("sheet"); sheet.textContent = "";
@@ -1141,6 +1183,7 @@ textarea { resize: vertical; min-height: 64px; }
         el("p", { class: "note", text: "Renaming someone also moves their cards to the new name." }),
         el("label", { for: "sCur" }, ["Currency", cur])
       ]),
+      paletteBox(),
       el("div", { class: "box" }, [
         el("h3", { text: "Brands" }),
         el("p", { class: "note", text: "These appear as quick picks when you add a card. Tap a badge to change that brand's colour." }),
